@@ -966,7 +966,7 @@ function finish(B,D){const g=B.build(),parts=[];let n=0;
 function wheel(B,D,x,z,dual,r=.52,w0){const w=w0||(dual?.62:.32);B.cyl(VM(0x131114,{roughness:.95}),r,w,x,r,z,Math.PI/2,0,0,28);D.cyl(VM(0xc8c8c4,{roughness:.22,metalness:.8,env:.8}),r*.6,w+.02,x,r,z,Math.PI/2,0,0,20);D.cyl(VM(0x2a282c,{roughness:.6}),r*.24,w+.06,x,r,z,Math.PI/2,0,0,10);}
 function tractorModel(sub,hex,opt){
   opt=opt||{};
-  const B=new Builder(),D=new Builder(),dark=VM(0x1b191c,{roughness:.8}),blackp=VM(0x0f0e10,{roughness:.5}),steel=VM(0x4a4a51,{roughness:.5,metalness:.35}),body=VM(hex,{roughness:.3,metalness:.2,env:.8}),glass=VM(0x13262f,{roughness:.05,metalness:.85,env:1.1}),chrome=VM(0xd0d0cb,{roughness:.18,metalness:.9,env:1}),
+  const B=new Builder(),D=new Builder(),dark=VM(0x1b191c,{roughness:.8}),blackp=VM(0x0f0e10,{roughness:.5}),steel=VM(0x4a4a51,{roughness:.5,metalness:.35}),body=VM(hex,{roughness:.3,metalness:.2,env:.8}),glass=VM(0x0a1014,{roughness:.08,metalness:.55,env:.4}),chrome=VM(0xd0d0cb,{roughness:.18,metalness:.9,env:1}),
     lamp=VM(0xfff3d6,{emissive:0xffd9a0,emissiveIntensity:1.4}),red=VM(0xc0221a,{emissive:0x8a120c,emissiveIntensity:.9}),amber=VM(0xffb030,{emissive:0xff8a14,emissiveIntensity:1.2}),stripe=VM(opt.stripe||0x1a5f6f,{roughness:.4}),white=VM(0xf4f2ed,{roughness:.4}),yel=VM(0xf2c21a,{roughness:.5});
   if(sub==='ext'){const wb=3.9;
     for(const s of [-1,1])B.box(steel,6.9,.26,.14,1.75,.95,s*.42);for(const x of [-1.2,.6,2.4])D.box(steel,.12,.2,.9,x,.92,0);
@@ -975,7 +975,7 @@ function tractorModel(sub,hex,opt){
     B.cyl(steel,.52,.1,0,1.15,0,0,0,0,16);D.box(steel,1.1,.08,.9,-.2,1.07,0);
     for(const s of [-1,1])wheel(B,D,wb,s*1.03,false);
     B.box(body,2.3,1.5,2.46,wb+.2,1.72,0);B.box(body,2.1,1.25,2.46,wb+.1,3.08,0);B.box(body,.36,1.3,2.46,wb+1.18,3.02,0,0,0,.2);
-    B.box(glass,.08,1,2.14,wb+1.3,3.08,0,0,0,.2);
+    B.box(blackp,.05,1.12,2.26,wb+1.352,3.07,0,0,0,.2);B.box(glass,.08,1,2.14,wb+1.376,3.08,0,0,0,.2);for(const z of [-.5,.5])D.box(blackp,.03,.05,.8,wb+1.33,2.62,z,.5,0,0);
     for(const s of [-1,1]){B.box(glass,1.15,.78,.05,wb+.42,3.12,s*1.235);B.box(body,1.3,1.46,.03,wb+.32,1.76,s*1.243);D.box(stripe,2.3,.24,.03,wb+.2,2.28,s*1.262);D.box(blackp,.2,.05,.04,wb-.14,2.02,s*1.268);
       B.box(dark,.1,.5,.18,wb+1.1,2.9,s*1.46);D.box(dark,.36,.05,.05,wb+1.1,3.1,s*1.34);D.box(dark,.7,.05,.3,wb+.3,.7,s*1.1);D.box(dark,.7,.05,.3,wb+.3,1,s*1.12);}
     D.box(stripe,.03,.24,2.46,wb+1.364,2.28,0);
@@ -1193,7 +1193,7 @@ const CARS={pickup:{L:2.66,W:1.86,belt:1.02,roof:1.76,hood:[1.2,2.44],cab:[-.52,
   sedan:{L:2.36,W:1.8,belt:.9,roof:1.42,hood:[.92,2.18],cab:[-1.62,-1.02,.22,.98],wb:1.4,pill:[-.38]}};
 function carModel(kind,hex,svc){
   const c=CARS[kind],{L,W,belt,roof,wb}=c,[c0,c1,c2,c3]=c.cab,B=new Builder(),D=new Builder(),hz=W/2,
-    paint=VM(hex,{roughness:.28,metalness:.25,env:.85}),glass=VM(0x13262f,{roughness:.05,metalness:.85,env:1.1}),trim=VM(0x1c1b1e,{roughness:.55}),chrome=VM(0xd2d2ce,{roughness:.16,metalness:.9,env:1}),
+    paint=VM(hex,{roughness:.28,metalness:.25,env:.85}),glass=VM(0x0a1014,{roughness:.08,metalness:.55,env:.4}),trim=VM(0x1c1b1e,{roughness:.55}),chrome=VM(0xd2d2ce,{roughness:.16,metalness:.9,env:1}),
     lamp=VM(0xfff3d6,{emissive:0xffd9a0,emissiveIntensity:1.4}),red=VM(0xc0221a,{emissive:0x8a120c,emissiveIntensity:.9}),amber=VM(0xffb030,{emissive:0xff8a14,emissiveIntensity:1.2}),white=VM(0xf4f2ed,{roughness:.4});
   const sh=new T.Shape();sh.moveTo(-L,.4);sh.lineTo(-L,belt-.1);sh.quadraticCurveTo(-L,belt,-L+.12,belt);sh.lineTo(c.hood[0],belt);sh.lineTo(c.hood[1],belt-.1);sh.quadraticCurveTo(L,belt-.14,L,belt-.38);sh.lineTo(L,.5);sh.quadraticCurveTo(L,.4,L-.1,.4);
   sh.lineTo(wb+.5,.4);sh.absarc(wb,.39,.5,0,Math.PI,false);sh.lineTo(-wb+.5,.4);sh.absarc(-wb,.39,.5,0,Math.PI,false);sh.lineTo(-L,.4);
