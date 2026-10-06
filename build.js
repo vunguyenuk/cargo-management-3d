@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+// Builds the two deliverables from src/. No dependencies: `node build.js`.
+//   index.html                    standalone page, three.js loaded from vendor/ (works offline)
+//   dist/tideline-terminal.html   fragment for publishing as a Claude artifact (three.js from cdnjs)
+const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
+const root = __dirname, read = f => fs.readFileSync(path.join(root, f), 'utf8'), write = (f, s) => fs.writeFileSync(path.join(root, f), s);
+
+const shell = read('src/shell.html');                       // <title>, fonts, CSS, HUD markup
+const js = "(()=>{'use strict';\n" + read('src/world.js')    // scene, models, simulation
+         + read('src/ui.js') + "})();\n";                    // camera, selection, HUD, modules, frame loop
+
+// syntax check before writing anything
+fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
+const chk = path.join(root, 'dist', '.check.js');
+fs.writeFileSync(chk, js);
+try { execFileSync(process.execPath, ['--check', chk], { stdio: 'inherit' }); } finally { fs.unlinkSync(chk); }
+
+const CDN = '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>';
+if (!shell.includes(CDN)) throw new Error('three.js <script> tag not found in src/shell.html');
+
+write('dist/tideline-terminal.html', shell + '<script>\n' + js + '</script>\n');
+
+const cut = shell.indexOf('<div id="app"');
+const head = shell.slice(0, cut), body = shell.slice(cut).replace(CDN, '<script src="vendor/three.min.js"></script>');
+write('index.html', `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+${head}</head>
+<body>
+${body}<script>
+${js}</script>
+</body>
+</html>
+`);
+console.log('built index.html (' + fs.statSync(path.join(root, 'index.html')).size + ' bytes) and dist/tideline-terminal.html');
