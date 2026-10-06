@@ -88,9 +88,10 @@ let toastT=0;function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=
 const go=k=>{const t=fromKey(k);if(t&&!t.dead)select(t,true);};
 /* show / hide panels */
 const PANELS=[['kpis','Key figures'],['insp','Terminal overview'],['tracker','Vessel call'],['lists','Equipment and activity']],HID=new Set();
-try{(JSON.parse(localStorage.getItem('tideline.panels'))||[]).forEach(k=>{if(PANELS.some(p=>p[0]===k))HID.add(k);});}catch(e){}
+// first visit starts quiet: only the key figures are open, the rest wait as chips
+{let saved=null;try{saved=JSON.parse(localStorage.getItem('tideline.panels.v2'));}catch(e){}(Array.isArray(saved)?saved:['insp','tracker','lists']).forEach(k=>{if(PANELS.some(p=>p[0]===k))HID.add(k);});}
 function applyPanels(){for(const [k] of PANELS)app.classList.toggle('x-'+k,HID.has(k));const all=HID.has('all');app.classList.toggle('x-all',all);$('#pbtn').classList.toggle('on',all);
-  try{localStorage.setItem('tideline.panels',JSON.stringify([...HID].filter(k=>k!=='all')));}catch(e){}
+  try{localStorage.setItem('tideline.panels.v2',JSON.stringify([...HID].filter(k=>k!=='all')));}catch(e){}
   const ck='<svg class="i" viewBox="0 0 20 20"><path d="M5 10.5l3.2 3.2L15 7"/></svg>';
   $('#pmenu').innerHTML=PANELS.map(([k,l])=>`<button role="menuitemcheckbox" aria-checked="${!HID.has(k)}" data-pt="${k}">${ck}${l}</button>`).join('')+`<hr><button role="menuitemcheckbox" aria-checked="${all}" data-pt="all">${ck}Hide everything<kbd>H</kbd></button>`;
   setShift();}
@@ -316,6 +317,7 @@ function frame(now){
   uT.value+=rdt*(speed?1:.25);
   for(const c of cranes){c.sync();if(c.kind==='sts')syncBoom(c);}
   for(const t of trucks)t.sync();
+  for(const p of peds)p.sync(rdt);
   tug.position.set(Math.sin(simT*.018)*260,0,-92+Math.sin(simT*.05)*6);tug.rotation.y=Math.cos(simT*.018)>0?0:Math.PI;
   if(colorBy==='dwell'&&now-dwT>20000){dwT=now;repaintAll();}
   if(dirtyC){CIM.instanceMatrix.needsUpdate=true;dirtyC=false;}

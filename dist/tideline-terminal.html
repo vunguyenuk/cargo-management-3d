@@ -485,7 +485,8 @@ function plate(text,w,h,fg='#ffffff'){const c=document.createElement('canvas');c
 
 /* ---------- world constants (metres) ---------- */
 const CL=12.2,CH=2.6,CW=2.44,BAYP=12.9,ROWP=2.75,MAXT=4,NB=6,NR=5,BED=1.32,DECK=3.6,BZ=-11.6;
-const LQ=10,HZ=[10,32,58,84,108],HDIR={10:1,32:-1,58:-1,84:-1,108:1},VXS=[-112,0,112],OFF=1.75,LANES=[32,58,84];
+// quay has two eastbound lanes between the crane legs: LQ is worked under the cranes, LS is where idle tractors stand by
+const LQ=8,LS=13,HZ=[10,32,58,84,108],ROADS=[8,13,32,58,84,108],HDIR={8:1,13:1,32:-1,58:-1,84:-1,108:1},VXS=[-112,0,112],OFF=2.3,LANES=[32,58,84];
 const GX0=-134,GX1=134,GZ1=160,FENCE_Z=140,GATE_Z=132;
 
 /* ---------- water ---------- */
@@ -554,11 +555,11 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   for(const z of [8,15,22])ln(JOINT,GX0,z,GX1,z,.07,0,0,.02);
   quad(0x8a857f,GX0,0,GX1-GX0,1.1,.022);ln(YE,GX0,1.55,GX1,1.55,.28);
   for(const z of [3,17]){quad(0x4d4946,-132,z-.24,264,.48,.028);quad(0xb4aea6,-132,z-.05,264,.1,.04);}
-  quad(0x7c7c80,-116.7,5.4,233.4,9.2,.016);
-  const VSEG=[[14.6,28.5],[35.5,54.5],[61.5,80.5],[87.5,103.4]],HSEG=[[-107.3,-4.7],[4.7,107.3]];
+  quad(0x7c7c80,-116.7,5.2,233.4,10.6,.016);decal('STANDBY',-56,LS,.9,'#b4aea6');decal('STANDBY',56,LS,.9,'#b4aea6');
+  const VSEG=[[16,28.5],[35.5,54.5],[61.5,80.5],[87.5,103.4]],HSEG=[[-107.3,-4.7],[4.7,107.3]];
   for(const v of VXS)for(const [a,b] of VSEG){ln(WH,v-4.7,a,v-4.7,b);ln(WH,v+4.7,a,v+4.7,b);ln(YE,v,a,v,b,.15,3,3);}
   for(const z of LANES)for(const [a,b] of HSEG){ln(WH,a,z-3.5,b,z-3.5);ln(WH,a,z+3.5,b,z+3.5,.15,2,2);for(let x=a+12;x<b-6;x+=26)arrow(WH,x,z,Math.PI);}
-  for(const [a,b] of HSEG){ln(YE,a,5.4,b,5.4,.2,2.4,1.6);ln(YE,a,14.6,b,14.6,.2,2.4,1.6);ln(WH,a,103.4,b,103.4);ln(WH,a,112.6,b,112.6);for(let x=a+10;x<b-4;x+=24){arrow(YE,x,LQ,0);arrow(WH,x,108,0);}}
+  for(const [a,b] of HSEG){ln(YE,a,5.2,b,5.2,.2,2.4,1.6);ln(YE,a,15.8,b,15.8,.2,2.4,1.6);ln(WH,a,10.5,b,10.5,.12,1.6,2.4);for(let x=a+22;x<b-4;x+=24)arrow(WH,x,LS,0);ln(WH,a,103.4,b,103.4);ln(WH,a,112.6,b,112.6);for(let x=a+10;x<b-4;x+=24){arrow(YE,x,LQ,0);arrow(WH,x,108,0);}}
   for(const b of blocks){const z0=b.lane+4.6-CW/2-.5,x0=b.x0-CL/2-.6;quad(PADC,x0,z0,5*BAYP+CL+1.2,4*ROWP+CW+1,.012);
     for(const s of b.stacks){const xa=s.x-CL/2,xb=s.x+CL/2,za=s.z-CW/2,zb=s.z+CW/2;ln(YE,xa,za,xb,za,.1);ln(YE,xa,zb,xb,zb,.1);ln(YE,xa,za,xa,zb,.1);ln(YE,xb,za,xb,zb,.1);}
     const zl=b.lane+4.6+4*ROWP+CW/2;
@@ -570,7 +571,7 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   for(let x=-126;x<=126;x+=14)decal(String(Math.round((x+126)/14)+1),x,4.6,.9,'#8a857f');
   // gate apron
   ln(WH,-9.5,112.6,-9.5,GZ1);ln(WH,9.5,112.6,9.5,GZ1);ln(YE,-.12,112.6,-.12,GZ1,.12);ln(YE,.12,112.6,.12,GZ1,.12);
-  quad(WH,-3.6,GATE_Z-5.4,3.4,.45,.035);quad(WH,.2,GATE_Z+5,3.4,.45,.035);
+  quad(WH,-4,GATE_Z-5.4,3.6,.45,.035);quad(WH,.4,GATE_Z+5,3.6,.45,.035);
   decal('OUT',-OFF,150,1.5,'#f1eee6');decal('IN',OFF,154,1.5,'#f1eee6');arrow(WH,-OFF,145.5,-Math.PI/2);arrow(WH,OFF,149,Math.PI/2);
   for(let x=34;x<=70;x+=3)ln(WH,x,130.5,x,135.5,.12);
   quad(0xa69a80,GX0,FENCE_Z+.3,GX1-GX0,GZ1-FENCE_Z-.3,.012);quad(0x8b8b8e,-9.5,FENCE_Z,19,GZ1-FENCE_Z,.016);
@@ -597,10 +598,10 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   scene.add(F.build(false));
   // gate: canopy, booths, barriers, OCR portal
   B.box(M_(0xdedbd3),32,.3,9,0,6.92,GATE_Z);B.box(roof,32.4,.75,9.4,0,6.4,GATE_Z);B.box(white,32.5,.2,9.5,0,6.05,GATE_Z);
-  for(const x of [-15,-5.2,5.2,15])B.box(white,.5,6.1,.5,x,3.05,GATE_Z);
-  for(const x of [-5.2,5.2]){B.box(white,1.9,2.7,3.2,x,1.55,GATE_Z);B.box(glass,1.95,1,3.25,x,2.05,GATE_Z);B.box(roofD,2.3,.18,3.6,x,3,GATE_Z);B.box(conc,2.5,.22,6,x,.11,GATE_Z);}
+  for(const x of [-15,-5.8,5.8,15])B.box(white,.5,6.1,.5,x,3.05,GATE_Z);
+  for(const x of [-5.8,5.8]){B.box(white,1.9,2.7,3.2,x,1.55,GATE_Z);B.box(glass,1.95,1,3.25,x,2.05,GATE_Z);B.box(roofD,2.3,.18,3.6,x,3,GATE_Z);B.box(conc,2.5,.22,6,x,.11,GATE_Z);}
   B.box(conc,.9,.22,12,0,.11,GATE_Z);
-  for(const [x,z,s] of [[-3.7,GATE_Z-5,1],[3.7,GATE_Z+5.4,-1]]){B.box(hiv,.45,1.1,.45,x,.55,z);B.box(M_(0xd43a2c),.1,.1,3.4,x,2.6,z+s*.2,s*.9,0,0);}
+  for(const [x,z,s] of [[-4.2,GATE_Z-5,1],[4.2,GATE_Z+5.4,-1]]){B.box(hiv,.45,1.1,.45,x,.55,z);B.box(M_(0xd43a2c),.1,.1,3.4,x,2.6,z+s*.2,s*.9,0,0);}
   for(const z of [GATE_Z+16]){for(const x of [-9.8,9.8])B.box(steel,.3,6.6,.3,x,3.3,z);B.box(steel,19.9,.3,.3,0,6.5,z);for(const x of [-OFF,OFF]){B.box(dark,.5,.4,.5,x,6.1,z);B.box(lamp,.3,.2,.1,x,5.9,z-.3);}}
   // office and control tower
   B.box(cream,32,9.6,11,50,4.8,124);for(const y of [2.4,5.6,8.4])B.box(glass,32.1,1.4,11.1,50,y,124);B.box(M_(0xd8d0c2),33,.5,12,50,9.85,124);
@@ -616,7 +617,7 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   for(const x of [-103,-8.5,8.5,103])for(const z of [52.5,78.5]){B.cyl(steel,.28,28,x,14,z,0,0,0,8,.14);B.cyl(steel,.8,.3,x,28.1,z,0,0,0,10);for(const a of [0,1,2,3])B.box(lamp,.9,.22,.5,x+Math.cos(a*Math.PI/2)*1.1,27.8,z+Math.sin(a*Math.PI/2)*1.1,0,a*Math.PI/2,0);}
   // people, for scale
   const person=(x,z,v)=>{B.cyl(dark,.13,.85,x,.43,z,0,0,0,6);B.cyl(v,.2,.62,x,1.16,z,0,0,0,8);B.add(skin,new T.SphereGeometry(.14,8,6),x,1.6,z);B.cyl(white,.16,.1,x,1.72,z,0,0,0,8);};
-  [[-100,1.3],[-36,1.4],[28,1.3],[102,1.4],[-7.4,GATE_Z-1],[7.3,GATE_Z+1.5],[40,131],[41.2,131.6],[58,130.4],[-60,133.4],[-58.6,134],[-8.8,50.8],[103.6,77],[-103.4,54.2],[6.6,27]].forEach(([x,z],i)=>person(x,z,i%3?hiv:hio));
+  [[-100,1.3],[-36,1.4],[28,1.3],[102,1.4],[-8.3,GATE_Z-1],[8.2,GATE_Z+1.5],[40,131],[41.2,131.6],[58,130.4],[-60,133.4],[-58.6,134],[-8.8,50.8],[103.6,77],[-103.4,54.2],[6.6,27]].forEach(([x,z],i)=>person(x,z,i%3?hiv:hio));
   // background town
   const tones=[0xe2d6c4,0xd9c0a6,0xe9dfd0,0xc9ad94,0xd6c5b4,0xcfd3d0];
   for(let i=0;i<34;i++){const x=rr(-520,520),z=rr(214,420);if(Math.abs(x)<26)continue;const w=rr(14,36),d=rr(12,28),h=rr(6,24);
@@ -772,8 +773,9 @@ blocks.forEach(b=>makeRTG('RTG-'+b.name,b));
 /* ---------- vessels ---------- */
 const VNAMES=['MV Hải Âu','MV Sao Mai','MV Hoàng Hôn','MV Lam Giang','MV Nam Phong','MV Triều Dương'],HULLS=[0x1b4a5c,0x26334f,0x6e2a23,0x2f4a3f,0x3b2b47,0x20262e];
 let vN=0;
-const berths=[{id:'B1',name:'Berth 1',cx:-62,half:-1,exitX:0,lapX:-96,cranes:[],vessel:null,next:null,nextAt:0},{id:'B2',name:'Berth 2',cx:62,half:1,exitX:112,lapX:16,cranes:[],vessel:null,next:null,nextAt:0}];
-berths.forEach(b=>{b.pickCrane=()=>{let best=null;for(const c of b.cranes)if(!c.exhausted&&(!best||c.assigned<best.assigned))best=c;return best||b.cranes[0];};});
+const berths=[{id:'B1',name:'Berth 1',cx:-62,half:-1,exitX:0,lapX:-96,cranes:[],vessel:null,next:null,nextAt:0,sbE:0,sbN:0},{id:'B2',name:'Berth 2',cx:62,half:1,exitX:112,lapX:16,cranes:[],vessel:null,next:null,nextAt:0,sbE:0,sbN:0}];
+// a crane is worth driving to if it still has lifts to hand out, or is already holding a box for a truck
+berths.forEach(b=>{b.pickCrane=()=>{const v=b.vessel,dry=v&&v.mode==='discharge'&&v.jobsLeft<=0;let best=null;for(const c of b.cranes){if(dry?!c.cargo:c.exhausted)continue;if(!best||c.assigned<best.assigned)best=c;}return best||b.cranes.find(c=>c.cargo)||b.cranes[0];};});
 const planCall=mode=>{const k=vN++;return {name:VNAMES[k%VNAMES.length],line:LINES[k%LINES.length],hull:HULLS[k%HULLS.length],mode,planned:ri(30,38),voy:ri(101,389)+(mode==='discharge'?'N':'S')};};
 const etdOf=v=>v.phase==='work'?simT+(v.planned-v.done)*13.5+25:v.phase==='done'?simT+6:v.phase==='depart'?v.tDep:simT+55+v.planned*13.5;
 function makeVessel(b,plan){
@@ -825,7 +827,7 @@ function* berthLife(b,mode,warm){
       v.phase='moor';v.status='Mooring';v.tBerth=simT;b.cranes.forEach(c=>c.boomT=0);ev('vessel',`${v.name} all fast at ${b.name}`,v);
       yield* sleep(2.5);yield* until(()=>b.cranes.every(c=>c.boom<.02));v.tWork=simT;
     }
-    v.jobsLeft=v.toDispatch=v.planned-v.done;v.phase='work';v.status=mode==='discharge'?'Discharging':'Loading';
+    v.jobsLeft=v.toDispatch=v.planned-v.done;v.phase='work';b.sbE++;b.sbN=0;v.status=mode==='discharge'?'Discharging':'Loading';
     let guard=0;
     while(!(v.done>=v.planned&&b.cranes.every(c=>c.idle&&!c.cargo))){guard+=(yield)||0;if(guard>1500){v.jobsLeft=v.toDispatch=0;if(b.cranes.every(c=>c.idle&&!c.cargo))break;}}
     v.phase='done';v.status='Completed';v.tDone=simT;ev('vessel',`${v.name} completed ${v.done} moves`,v);yield* sleep(4);
@@ -919,13 +921,13 @@ function* rtgLoop(c){
 const nextV=(x,d)=>{if(d>0){for(const v of VXS)if(v>x+.6)return v;return VXS[2];}for(let i=2;i>=0;i--)if(VXS[i]<x-.6)return VXS[i];return VXS[0];};
 const upV=(x,d)=>nextV(x,-d);
 const vx=(v,z1,z2)=>v+(z2<z1?OFF:-OFF);
-const snapZ=z=>{let b=HZ[0];for(const h of HZ)if(Math.abs(h-z)<Math.abs(b-z))b=h;return b;};
+const snapZ=z=>{let b=ROADS[0];for(const h of ROADS)if(Math.abs(h-z)<Math.abs(b-z))b=h;return b;};
 function route(A,B){
   const dA=HDIR[A.z],dB=HDIR[B.z];
   if(A.z===B.z&&(B.x-A.x)*dA>.5)return [A,B];
   const vo=nextV(A.x,dA),vi=upV(B.x,dB);
   if(vo===vi&&A.z!==B.z){const x=vx(vo,A.z,B.z);return [A,{x,z:A.z},{x,z:B.z},B];}
-  const need=Math.sign(vi-vo)||1;let best=108,bc=1e9;for(const z of HZ){if(HDIR[z]!==need)continue;const c=Math.abs(A.z-z)+Math.abs(z-B.z);if(c<bc){bc=c;best=z;}}
+  const need=Math.sign(vi-vo)||1;let best=108,bc=1e9;for(const z of ROADS){if(z===LQ||z===LS||HDIR[z]!==need)continue;const c=Math.abs(A.z-z)+Math.abs(z-B.z);if(c<bc){bc=c;best=z;}}
   const x1=vx(vo,A.z,best),x2=vx(vi,best,B.z);return [A,{x:x1,z:A.z},{x:x1,z:best},{x:x2,z:best},{x:x2,z:B.z},B];
 }
 function makePath(raw){
@@ -1015,35 +1017,74 @@ function trailerModel(){
   return finish(B,D);
 }
 const _A={x:0,z:0},_K={x:0,z:0},_F={x:0,z:0},_D={x:0,z:0},_T1={x:0,z:0},_T2={x:0,z:0};
+const TRO=[-6.2,-4,-1.8,.4,2.6,4.6];
 class Truck{
-  constructor(sub,id,hex,opt){this.kind='truck';this.sub=sub;this.id=id;this.wb=sub==='tt'?3.0:3.9;
+  constructor(sub,id,hex,opt){this.kind='truck';this.sub=sub;this.id=id;this.wb=sub==='tt'?3.0:3.9;this.nose=5+this.wb+1.5;this.tail=6.4;this.cabO=[1.2,3,this.wb+1.3];
     this.group=new T.Group();this.tractor=tractorModel(sub,hex,opt);this.trailer=trailerModel();this.group.add(this.tractor,this.trailer);this.group.userData.ent=this;scene.add(this.group);
-    this.pos={x:0,z:0};this.dir={x:1,z:0};this.tp={x:0,z:0};this.ta=0;this.v=0;this.vmax=sub==='tt'?9:8.2;this.acc=3;this.dec=5;this.cargo=null;this.status='Standby';this.dest='—';this.trips=0;this.active=true;this.blockT=0;this.pop=1;trucks.push(this);ents.push(this);this.place(0,400,1);}
-  place(x,z,dx){this.path=makePath([{x:x-dx*40,z},{x,z}]);this.s=40;this.pos.x=x;this.pos.z=z;this.dir.x=dx;this.dir.z=0;}
+    this.pos={x:0,z:0};this.dir={x:1,z:0};this.tp={x:0,z:0};this.ta=0;this.kx=0;this.kz=0;this.ka=0;this.body=[];for(let i=0;i<9;i++)this.body.push({x:0,z:9999});this.zones=[];this.groups=[];this.gi=0;this.waitT=0;
+    this.v=0;this.vmax=sub==='tt'?9:8.2;this.acc=3;this.dec=5;this.cargo=null;this.status='Standby';this.dest='—';this.trips=0;this.active=true;this.pop=1;trucks.push(this);ents.push(this);this.place(0,400,1);}
+  place(x,z,dx){this.path=makePath([{x:x-dx*40,z},{x,z}]);this.s=40;this.pos.x=x;this.pos.z=z;this.dir.x=dx;this.dir.z=0;this.updatePose();}
   get label(){return this.id;}
   center(v){return v.set(this.tp.x+Math.cos(this.ta)*3,this.cargo?5.4:4.9,this.tp.z-Math.sin(this.ta)*3);}
   frame(){return {x:this.tp.x+Math.cos(this.ta)*2.6,y:2.3,z:this.tp.z-Math.sin(this.ta)*2.6,rot:this.ta,d:[19.6,4.8,3.5]};}
-  sync(){const p=this.path,s=this.s;p.at(s-4.3,_A,_D);p.at(s+5,_K,_D);p.at(s+5+this.wb,_F,_D);
+  // articulated pose from the path: trailer tail, kingpin and front axle each ride the path (no tail swing into the next lane)
+  updatePose(){const p=this.path,s=this.s;p.at(s-6.2,_A,_D);p.at(s+5,_K,_D);p.at(s+5+this.wb,_F,_D);
     let dx=_K.x-_A.x,dz=_K.z-_A.z;const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;this.tp.x=_K.x-dx*5;this.tp.z=_K.z-dz*5;this.ta=Math.atan2(-dz,dx);
-    this.group.visible=this.active;const k=this.pop;
+    let cx=_F.x-_K.x,cz=_F.z-_K.z;const m=Math.hypot(cx,cz)||1;cx/=m;cz/=m;this.kx=_K.x;this.kz=_K.z;this.ka=Math.atan2(-cz,cx);
+    const b=this.body;let i=0;for(const o of TRO){b[i].x=this.tp.x+dx*o;b[i].z=this.tp.z+dz*o;i++;}for(const o of this.cabO){b[i].x=_K.x+cx*o;b[i].z=_K.z+cz*o;i++;}}
+  sync(){this.group.visible=this.active;const k=this.pop;
     this.trailer.position.set(this.tp.x,0,this.tp.z);this.trailer.rotation.y=this.ta;this.trailer.scale.setScalar(k);
-    this.tractor.position.set(_K.x,0,_K.z);this.tractor.rotation.y=Math.atan2(-(_F.z-_K.z),_F.x-_K.x);this.tractor.scale.setScalar(k);
+    this.tractor.position.set(this.kx,0,this.kz);this.tractor.rotation.y=this.ka;this.tractor.scale.setScalar(k);
     if(this.cargo)this.cargo.set(this.tp.x,BED,this.tp.z,this.ta);}
 }
-function blocked(t){for(const o of trucks){if(o===t||!o.active)continue;const dx=o.pos.x-t.pos.x,dz=o.pos.z-t.pos.z,f=dx*t.dir.x+dz*t.dir.z;if(f>.5&&f<19+t.v*.9&&Math.abs(dx*t.dir.z-dz*t.dir.x)<2.1)return true;}return false;}
+/* ---------- traffic control ----------
+   Vehicles never overlap. Two mechanisms:
+   1. Look-ahead: each vehicle sweeps its own path ahead of its nose and brakes for any other vehicle body (or a person crossing) in the way.
+   2. Junction reservations: before its nose enters a junction box a vehicle reserves the exact piece of path it will drive there. Crossing or
+      merging paths cannot be reserved at the same time; vehicles arriving on the same lane simply follow each other. Junctions closer together
+      than a truck length are reserved as one group, and a group is only granted when there is room to clear it on the far side. */
+const ZX=9.8,ZZ=10,CLEAR=2.7,GAPV=1.2,DCONF=3.0,PEDR=1.9;
+const JUNC=[];for(const v of VXS)for(const h of HZ)JUNC.push({x:v,z:h,res:[]});
+const peds=[];
+function dropRes(tr){for(const J of JUNC)for(let i=J.res.length-1;i>=0;i--)if(J.res[i].veh===tr)J.res.splice(i,1);}
+function planZones(tr,path){dropRes(tr);const zs=[];
+  const add=(J,a,b)=>{const pts=[];for(let s=a;s<=b+.01;s+=1.5){path.at(s,_T1,_T2);pts.push({x:_T1.x,z:_T1.z});}zs.push({J,sIn:a,sOut:b,pts,held:false,done:false});};
+  for(const J of JUNC){let a=null,b=null;   // a route can pass the same junction twice (a lap), so collect every separate pass
+    for(let s=-tr.tail;s<=path.len+tr.nose;s+=.75){path.at(s,_T1,_T2);if(Math.abs(_T1.x-J.x)<=ZX&&Math.abs(_T1.z-J.z)<=ZZ){if(a===null)a=s;b=s;}else if(a!==null){add(J,a,b);a=null;}}
+    if(a!==null)add(J,a,b);}
+  zs.sort((p,q)=>p.sIn-q.sIn);
+  const L=tr.nose+tr.tail,groups=[];
+  for(const z of zs){if(z.sIn<=tr.nose+.5){z.held=true;z.J.res.push({veh:tr,pts:z.pts});continue;}   // already standing in it
+    const g=groups[groups.length-1];if(g&&z.sIn-g.sOut<L+2){g.zs.push(z);g.sOut=Math.max(g.sOut,z.sOut);}else groups.push({zs:[z],sIn:z.sIn,sOut:z.sOut});}
+  tr.zones=zs;tr.groups=groups;tr.gi=0;}
+function conflict(a,b){if(Math.hypot(a[0].x-b[0].x,a[0].z-b[0].z)<1.2)return false;for(const p of a)for(const q of b){const dx=p.x-q.x,dz=p.z-q.z;if(dx*dx+dz*dz<DCONF*DCONF)return true;}return false;}
+function bodyNear(tr,px,pz){for(const o of trucks){if(o===tr||!o.active)continue;const ex=o.pos.x-px,ez=o.pos.z-pz;if(ex*ex+ez*ez>400)continue;for(const q of o.body){const qx=q.x-px,qz=q.z-pz;if(qx*qx+qz*qz<CLEAR*CLEAR)return true;}}return false;}
+function acquire(tr,path,g,goal,force){
+  for(const z of g.zs)for(const r of z.J.res)if(r.veh!==tr&&conflict(z.pts,r.pts))return false;
+  if(!force){const b=Math.min(g.sOut+tr.nose+tr.tail+GAPV,goal+tr.nose);for(let s=g.sOut;s<=b;s+=1.5){path.at(s,_T1,_T2);if(bodyNear(tr,_T1.x,_T1.z))return false;}}
+  for(const z of g.zs){z.held=true;z.J.res.push({veh:tr,pts:z.pts});}return true;}
+function freeAhead(tr,path,s,look){const s0=s+tr.nose;
+  for(let d=0;d<=look;d+=1.5){path.at(s0+d,_T1,_T2);const px=_T1.x,pz=_T1.z;if(bodyNear(tr,px,pz))return d;
+    for(const p of peds)if(p.cross){const qx=p.x-px,qz=p.z-pz;if(qx*qx+qz*qz<PEDR*PEDR)return d;}}
+  return 1e9;}
 const P=t=>({x:t.pos.x,z:snapZ(t.pos.z)});
 function* drive(tr,pts,opt){
   const path=makePath(pts),last=pts[pts.length-1],prev=pts[pts.length-2],dirx=Math.sign(last.x-prev.x);let s=0;
-  tr.path=path;tr.s=0;path.at(0,tr.pos,tr.dir);
+  tr.path=path;tr.s=0;path.at(0,tr.pos,tr.dir);planZones(tr,path);tr.waitT=0;
   for(;;){
-    const dt=(yield)||0;let end=path.len;
-    if(opt&&opt.stopX){end=path.len-(last.x-opt.stopX())*dirx;if(end<s-1.2)return 'missed';if(end<s)end=s;}
-    const turn=path.at(s+11,_T1,_T2)||path.at(s-4.3,_T1,_T2);
-    let vt=Math.min(turn?4.4:tr.vmax,Math.sqrt(2*tr.dec*.8*Math.max(0,end-s-.03)));
-    if(blocked(tr)){tr.blockT+=dt;if(tr.blockT<26||tr.blockT>29)vt=0;if(tr.blockT>29)tr.blockT=0;}else tr.blockT=0;
+    const dt=(yield)||0;let goal=path.len;
+    if(opt&&opt.stopX){goal=path.len-(last.x-opt.stopX())*dirx;if(goal<s-1.2)return 'missed';if(goal<s)goal=s;}
+    if(opt&&opt.abort&&tr.v<.05&&tr.dir.z===0&&HDIR[tr.pos.z]!==undefined&&opt.abort()){tr.v=0;return 'abort';}
+    for(const z of tr.zones)if(z.held&&!z.done&&s-tr.tail>z.sOut+.4){z.done=true;const i=z.J.res.findIndex(r=>r.veh===tr&&r.pts===z.pts);if(i>=0)z.J.res.splice(i,1);}
+    let lim=goal;const bd=tr.v*tr.v/(2*tr.dec*.8),g=tr.groups[tr.gi];
+    if(g&&s+tr.nose+bd+8>=g.sIn&&goal+tr.nose>g.sIn){
+      if(acquire(tr,path,g,goal,tr.waitT>45)){tr.gi++;tr.waitT=0;}
+      else{lim=Math.min(goal,Math.max(s,g.sIn-tr.nose-.8));if(tr.v<.2)tr.waitT+=dt;}}
+    const turn=path.at(s+11,_T1,_T2)||path.at(s-6.2,_T1,_T2),free=freeAhead(tr,path,s,bd+9);
+    const vt=Math.min(turn?4.4:tr.vmax,Math.sqrt(2*tr.dec*.8*Math.max(0,lim-s-.03)),free>1e8?99:Math.sqrt(2*tr.dec*.8*Math.max(0,free-GAPV)));
     tr.v=tr.v<vt?Math.min(vt,tr.v+tr.acc*dt):Math.max(vt,tr.v-tr.dec*1.5*dt);
-    s=Math.min(end,s+tr.v*dt);tr.s=s;path.at(s,tr.pos,tr.dir);
-    if(end-s<.06&&tr.v<.4){tr.v=0;tr.s=end;path.at(end,tr.pos,tr.dir);return 'ok';}
+    s=Math.min(lim,s+tr.v*dt);tr.s=s;path.at(s,tr.pos,tr.dir);
+    if(goal-s<.06&&tr.v<.4){tr.v=0;tr.s=goal;path.at(goal,tr.pos,tr.dir);return 'ok';}
   }
 }
 function* toQuay(tr,b,cr){
@@ -1072,19 +1113,20 @@ function* toYard(tr,st,type,box){
   const q={truck:tr,stack:st,type,box:box||null,free:false};st.blk.rtg.queue.push(q);tr.status='At '+st.blk.rtg.id;yield* until(()=>q.free);
 }
 function* ttLoop(tr,b,k){
+  // nothing left to fetch or carry for this call (or no vessel): get off the working lane
+  const idle=()=>{const v=b.vessel;if(!v||v.phase!=='work')return true;return v.mode==='load'?v.toDispatch<=0:(v.jobsLeft<=0&&b.cranes.every(c=>!c.cargo));};
+  const slot=()=>{const on=Math.abs(tr.pos.z-LS)<.01;let n=0;for(const o of trucks)if(o!==tr&&o.berth===b&&Math.abs(o.pos.z-LS)<.01&&(!on||o.pos.x>tr.pos.x))n++;return b.exitX-20-20.5*n;};
   for(;;){
     const v=b.vessel,working=v&&v.phase==='work';
     if(tr.cargo&&!(working&&v.mode==='load')){let st;while(!(st=yard.reserveIn(b.half)))yield* sleep(1);yield* toYard(tr,st,'store');continue;}
-    if(!working){tr.status='Standby';tr.dest='Quay lane';const tx=b.exitX-14-20*k;
-      if(!(tr.pos.z===LQ&&Math.abs(tr.pos.x-tx)<1))yield* drive(tr,route(P(tr),{x:tx,z:LQ}));
-      yield* until(()=>b.vessel&&b.vessel.phase==='work');continue;}
+    if(!tr.cargo&&idle()){tr.status='Standby';tr.dest='Standby lane';
+      yield* drive(tr,route(P(tr),{x:b.exitX-12,z:LS}),{stopX:slot,abort:()=>!idle()});
+      yield* until(()=>!idle());continue;}
     if(v.mode==='discharge'){
-      if(v.jobsLeft<=0&&b.cranes.every(c=>!c.cargo)){tr.status='Standby';yield;continue;}
       const cr=b.pickCrane();cr.assigned++;yield* toQuay(tr,b,cr);cr.assigned--;
       if(tr.cargo){tr.trips++;let st;while(!(st=yard.reserveIn(b.half)))yield* sleep(1);yield* toYard(tr,st,'store');}else yield;
     }else{
       if(!tr.cargo){
-        if(v.toDispatch<=0){tr.status='Standby';yield;continue;}
         const st=yard.reserveOut(b.half,'Export');if(!st){yield* sleep(1);continue;}
         v.toDispatch--;yield* toYard(tr,st,'retrieve');
       }
@@ -1094,7 +1136,7 @@ function* ttLoop(tr,b,k){
 }
 /* gate appointments */
 const HAUL=['Sếu Trắng Haulage','Gió Nam Trucking','Bến Mới Cartage','Vàm Xanh Transport','Đất Mũi Logistics'],EXTC=[0xf4f2ed,0x2a5a8a,0xb23a24,0xd3d6d4];
-const appts=[];let apN=10431,slotT=-60;
+const appts=[];let apN=10431,slotT=-60,spawnAt=0;
 function mkAppt(user,box){const a={id:'GA-'+(apN++),haul:pick(HAUL),plate:`${ri(50,63)}C-${ri(100,999)}.${ri(10,99)}`,truckId:'EXT-'+ri(1000,9999),type:box?'Import pick-up':rnd()<.5?'Export drop-off':'Import pick-up',box:box||null,status:'Booked',user:!!user,t:user?simT:(slotT+=55),tIn:null,turn:null,truck:null};
   if(slotT<simT-30)slotT=simT;appts.push(a);return a;}
 function fillAppts(){while(appts.filter(a=>a.status==='Booked'&&!a.user).length<4)mkAppt(false,null);
@@ -1112,7 +1154,8 @@ function* extLoop(tr,delay){
       if(!deliver){a.box=topOf(st);a.box.appt=a;}}
     a.status='At gate';a.truck=tr;tr.appt=a;tr.id=a.truckId;tr.haul=a.haul;tr.plate=a.plate;tr.job=a.type;tr.cargo=null;
     if(deliver){const bx=new Box();bx.dir='Export';bx.where='truck';bx.ref=tr;tr.cargo=bx;a.box=bx;}
-    tr.v=0;tr.active=true;tr.pop=0;stats.gateIn++;
+    yield* until(()=>simT>spawnAt&&!trucks.some(o=>o.active&&o.body.some(q=>Math.abs(q.x-OFF)<2.6&&q.z>186)));spawnAt=simT+4;
+    tr.v=0;tr.place(0,400,1);tr.active=true;tr.pop=0;stats.gateIn++;
     tr.status='Arriving at gate';tr.dest='Gate in';yield* drive(tr,[{x:OFF,z:215},{x:OFF,z:GATE_Z+11}]);
     tr.status='Gate check';a.tIn=simT;yield* sleep(2.6);a.status='In terminal';ev('gate',`${tr.id} gated in · ${a.type.toLowerCase()}`,tr);
     tr.status=deliver?'Delivering export':'Collecting import';tr.dest='Block '+slotName(st);
@@ -1120,7 +1163,7 @@ function* extLoop(tr,delay){
     yield* drive(tr,vi===0?[G,{x:OFF,z:B.z},B]:[G,{x:OFF,z:108},{x:vx(vi,108,B.z),z:108},{x:vx(vi,108,B.z),z:B.z},B]);
     const q={truck:tr,stack:st,type:deliver?'store':'retrieve',box:deliver?null:a.box,free:false};st.blk.rtg.queue.push(q);tr.status='At '+st.blk.rtg.id;yield* until(()=>q.free);
     if(deliver)a.box.appt=null;
-    tr.status='To gate';tr.dest='Gate out';const A=P(tr),vo=nextV(A.x,-1),E={x:-OFF,z:GATE_Z-11};
+    tr.status='To gate';tr.dest='Gate out';const A=P(tr),vo=nextV(A.x,-1),E={x:-OFF,z:GATE_Z-6};
     yield* drive(tr,vo===0?[A,{x:-OFF,z:A.z},E]:[A,{x:vo-OFF,z:A.z},{x:vo-OFF,z:108},{x:-OFF,z:108},E]);
     tr.status='Gate out';yield* sleep(1.6);tr.trips++;a.turn=(simT-a.tIn)*6/60;stats.turn.push(a.turn);if(stats.turn.length>6)stats.turn.shift();
     a.status='Completed';stats.gateDone++;ev('gate',`${tr.id} gated out · turn ${a.turn.toFixed(1)} min`,null);
@@ -1171,12 +1214,15 @@ function carModel(kind,hex,svc){
   return finish(B,D);
 }
 class Car{
-  constructor(id,model){this.kind='truck';this.sub='car';this.id=id;this.group=model;this.group.userData.ent=this;scene.add(this.group);this.pos={x:0,z:0};this.dir={x:1,z:0};this.ta=0;this.v=0;this.vmax=8.5;this.acc=3.4;this.dec=6;this.cargo=null;this.status='Yard patrol';this.dest='—';this.trips=0;this.active=true;this.blockT=0;this.pop=1;trucks.push(this);ents.push(this);}
-  place(x,z,dx){this.path=makePath([{x:x-dx*40,z},{x,z}]);this.s=40;this.pos.x=x;this.pos.z=z;this.dir.x=dx;this.dir.z=0;}
+  constructor(id,model){this.kind='truck';this.sub='car';this.id=id;this.group=model;this.group.userData.ent=this;scene.add(this.group);this.pos={x:0,z:0};this.dir={x:1,z:0};this.ta=0;this.cx=0;this.cz=0;this.nose=2.9;this.tail=2.9;
+    this.body=[];for(let i=0;i<4;i++)this.body.push({x:0,z:9999});this.zones=[];this.groups=[];this.gi=0;this.waitT=0;this.v=0;this.vmax=8.5;this.acc=3.4;this.dec=6;this.cargo=null;this.status='Yard patrol';this.dest='—';this.trips=0;this.active=true;this.pop=1;trucks.push(this);ents.push(this);}
+  place(x,z,dx){this.path=makePath([{x:x-dx*40,z},{x,z}]);this.s=40;this.pos.x=x;this.pos.z=z;this.dir.x=dx;this.dir.z=0;this.updatePose();}
   get label(){return this.id;}
-  center(v){return v.set(this.pos.x,2.7,this.pos.z);}
-  frame(){return {x:this.pos.x,y:1.05,z:this.pos.z,rot:this.ta,d:[6,2.3,2.6]};}
-  sync(){const p=this.path;p.at(this.s-1.6,_A,_D);p.at(this.s+1.6,_F,_D);this.ta=Math.atan2(-(_F.z-_A.z),_F.x-_A.x);this.group.position.set((_A.x+_F.x)/2,0,(_A.z+_F.z)/2);this.group.rotation.y=this.ta;}
+  center(v){return v.set(this.cx,2.7,this.cz);}
+  frame(){return {x:this.cx,y:1.05,z:this.cz,rot:this.ta,d:[6,2.3,2.6]};}
+  updatePose(){const p=this.path;p.at(this.s-1.6,_A,_D);p.at(this.s+1.6,_F,_D);let dx=_F.x-_A.x,dz=_F.z-_A.z;const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;this.ta=Math.atan2(-dz,dx);this.cx=(_A.x+_F.x)/2;this.cz=(_A.z+_F.z)/2;
+    [-2.3,-.75,.75,2.3].forEach((o,i)=>{this.body[i].x=this.cx+dx*o;this.body[i].z=this.cz+dz*o;});}
+  sync(){this.group.position.set(this.cx,0,this.cz);this.group.rotation.y=this.ta;}
 }
 function* carLoop(c){for(;;){c.status='Yard patrol';c.dest='Block F, lane 3';yield* drive(c,[P(c),{x:112+OFF,z:108},{x:112+OFF,z:84},{x:64,z:84}]);c.status='Checking stacks';yield* sleep(5);
   c.status='Yard patrol';c.dest='South road';yield* drive(c,[P(c),{x:-OFF,z:84},{x:-OFF,z:108},{x:38,z:108}]);c.trips++;c.status='Standing by';yield* sleep(4);}}
@@ -1184,10 +1230,50 @@ function* carLoop(c){for(;;){c.status='Yard patrol';c.dest='Block F, lane 3';yie
   const park=(kind,hex,x,z,r,svc)=>{const g=carModel(kind,hex,svc);g.position.set(x,0,z);g.rotation.y=r;scene.add(g);},N=Math.PI/2;
   [['sedan',0xb9bdc1,35.5,N],['suv',0x1b1c20,38.5,N],['pickup',0xf4f2ed,41.5,-N],['sedan',0x27395c,47.5,N],['suv',0xd9d4c6,50.5,-N],['sedan',0x7d1d1d,53.5,N],['suv',0x5a5f63,59.5,N],['sedan',0xf4f2ed,62.5,-N],['pickup',0x2b3a33,68.5,N]].forEach(([k,h,x,r])=>park(k,h,x,133,r));
   park('pickup',0xf4f2ed,-46,134.4,0,1);park('pickup',0xf2c21a,-105,21.4,0,1);park('suv',0xf4f2ed,72,22.4,Math.PI,1);park('pickup',0xf4f2ed,-36,134.6,Math.PI,1);})();
+/* ---------- people: quay signalmen, gate marshals and yard foremen ---------- */
+function makePed(vest){
+  const g=new T.Group(),dark=M_(0x23262d),skin=M_(0xc99878),white=M_(0xf3f1ec),vm=M_(vest,{roughness:.6,emissive:vest,emissiveIntensity:.18}),refl=M_(0xeeeeea,{emissive:0xffffff,emissiveIntensity:.3}),wand=M_(0xff7a1a,{emissive:0xff5a00,emissiveIntensity:1.6});
+  const B=new Builder();B.box(vm,.26,.6,.44,0,1.18,0);B.box(refl,.27,.06,.45,0,1.04,0);B.box(refl,.27,.06,.45,0,1.3,0);B.add(skin,new T.SphereGeometry(.13,10,8),0,1.62,0);B.cyl(white,.15,.1,0,1.72,0,0,0,0,10);B.box(white,.12,.03,.26,.14,1.68,0);g.add(B.build());
+  const limb=(mat,w,len,z,y,extra)=>{const p=new T.Group();p.position.set(0,y,z);const L=new Builder();L.box(mat,w,len,w,0,-len/2,0);if(extra)extra(L);p.add(L.build());g.add(p);return p;};
+  const p={x:0,z:0,hdg:0,rot:0,phase:0,wave:0,cross:false,moving:false,t:rr(0,6),next:rr(4,9),group:g,
+    legs:[limb(dark,.17,.86,-.11,.86),limb(dark,.17,.86,.11,.86)],arms:[limb(vm,.12,.58,-.29,1.44),limb(vm,.12,.58,.29,1.44,L=>L.box(wand,.05,.5,.05,0,-.8,0))],
+    sync(dt){this.t+=dt;let d=this.hdg-this.rot;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;this.rot+=d*(1-Math.exp(-dt*8));g.position.set(this.x,0,this.z);g.rotation.y=this.rot;
+      const sw=this.moving?Math.sin(this.phase*4.4)*.6:0;this.legs[0].rotation.z=sw;this.legs[1].rotation.z=-sw;this.arms[0].rotation.z=-sw*.7;
+      if(this.wave){this.arms[1].rotation.z=2.25+Math.sin(this.t*6)*.4;this.arms[1].rotation.x=Math.sin(this.t*6)*.3;}else{this.arms[1].rotation.z=sw*.7;this.arms[1].rotation.x=0;}}};
+  scene.add(g);peds.push(p);return p;
+}
+function* walkTo(p,x,z,sp=1.35){for(;;){const dt=(yield)||0,dx=x-p.x,dz=z-p.z,d=Math.hypot(dx,dz);if(d<.04){p.x=x;p.z=z;p.moving=false;return;}const st=Math.min(d,sp*dt);p.x+=dx/d*st;p.z+=dz/d*st;p.phase+=st;p.hdg=Math.atan2(-dz,dx);p.moving=true;}}
+// signalman on the apron behind each quay crane: follows the crane and waves trucks into position
+function* quayMan(p,c,off){p.x=c.g+off;p.z=20.6;let t=0;
+  for(;;){if(Math.abs(p.x-(c.g+off))>1.2){p.wave=0;yield* walkTo(p,c.g+off,20.6);}
+    const coming=trucks.some(o=>o.active&&Math.abs(o.pos.z-LQ)<.6&&o.v>.4&&c.g-o.pos.x>-2&&c.g-o.pos.x<34);
+    p.wave=coming||c.engaged?1:0;p.hdg=coming?Math.atan2(.8,-.6):Math.PI/2;
+    t+=(yield)||0;if(t>p.next){t=0;p.next=rr(7,13);off=rr(-6.5,6.5);}}}
+// marshal beside each gate lane
+function* gateMan(p,inbound){const x=inbound?5.8:-5.8,z0=GATE_Z+(inbound?5.6:-5.6),z1=GATE_Z+(inbound?9.4:-9.4);p.x=x;p.z=z0;let t=0,at0=true;
+  for(;;){const busy=trucks.some(o=>o.active&&o.sub==='ext'&&(inbound?(o.status==='Arriving at gate'||o.status==='Gate check'):(o.status==='Gate out'||(o.status==='To gate'&&Math.abs(o.pos.x)<4&&o.pos.z>100))));
+    p.wave=busy?1:0;if(busy)p.hdg=inbound?-Math.PI/2:Math.PI/2;
+    t+=(yield)||0;if(!busy&&t>p.next){t=0;p.next=rr(6,12);at0=!at0;yield* walkTo(p,x,at0?z0:z1,1.1);p.hdg=inbound?-Math.PI/2:Math.PI/2;}}}
+// yard foreman walking the block ends; crosses a truck lane only when it is clear, and trucks stop for him
+function laneClear(x,L){
+  for(const o of trucks){if(!o.active)continue;for(const q of o.body){const dz=Math.abs(q.z-L),dx=q.x-x;if(dz<4.6&&Math.abs(dx)<6.5)return false;if(dz<2.6&&dx>0&&dx<34&&o.v>.3)return false;}}
+  if(x<0){const J=JUNC.find(j=>j.x===0&&j.z===L);if(J.res.some(r=>r.pts[r.pts.length-1].x<-ZX+1.6))return false;}
+  return true;}
+function* foreman(p,x,dir){p.x=x;p.z=dir>0?26.5:97;
+  for(;;){for(const L of dir>0?LANES:[...LANES].reverse()){
+      yield* walkTo(p,x,L-4.8*dir);p.hdg=0;
+      while(!laneClear(x,L)){p.wave=1;yield;}
+      p.wave=0;p.cross=true;yield* walkTo(p,x,L+4.8*dir,1.5);p.cross=false;
+      yield* walkTo(p,x,clamp(L+13*dir,26.5,97));p.hdg=x<0?Math.PI:0;yield* sleep(rr(3,7));}
+    dir=-dir;}}
+(()=>{const hiv=0xe6d21a,hio=0xf07a1c;
+  cranes.filter(c=>c.kind==='sts').forEach((c,i)=>cos.push(quayMan(makePed(i%2?hio:hiv),c,i%2?4.5:-4.5)));
+  cos.push(gateMan(makePed(hio),true),gateMan(makePed(hiv),false),foreman(makePed(hiv),-11.2,1),foreman(makePed(hio),11.2,-1));})();
 const tug=(()=>{const B=new Builder();B.box(M_(0x26334f),10,2.8,4,0,-1.2,0);B.box(M_(0xf1efe9),3.6,2.3,2.8,-.6,1.3,0);B.box(M_(0x1f3640),3.7,.8,2.9,-.6,1.6,0);B.box(M_(0xc9481b),1.1,1.7,1.1,-2.6,2.6,0);B.cyl(M_(0x1d1b1e),.5,10.2,0,-.2,2.05,0,0,Math.PI/2,8);B.cyl(M_(0x1d1b1e),.5,10.2,0,-.2,-2.05,0,0,Math.PI/2,8);const g=B.build();scene.add(g);return g;})();
 
 function step(dt){
   simT+=dt;for(const c of cos)c.next(dt);
+  for(const t of trucks)t.updatePose();
   for(const c of cranes)if(c.kind==='sts'&&c.boom!==c.boomT){const d=c.boomT-c.boom,st=.2*dt;c.boom=Math.abs(d)<=st?c.boomT:c.boom+Math.sign(d)*st;}
   for(const t of trucks)if(t.active&&t.pop<1)t.pop=Math.min(1,t.pop+dt*2.5);
 }
@@ -1281,9 +1367,10 @@ let toastT=0;function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=
 const go=k=>{const t=fromKey(k);if(t&&!t.dead)select(t,true);};
 /* show / hide panels */
 const PANELS=[['kpis','Key figures'],['insp','Terminal overview'],['tracker','Vessel call'],['lists','Equipment and activity']],HID=new Set();
-try{(JSON.parse(localStorage.getItem('tideline.panels'))||[]).forEach(k=>{if(PANELS.some(p=>p[0]===k))HID.add(k);});}catch(e){}
+// first visit starts quiet: only the key figures are open, the rest wait as chips
+{let saved=null;try{saved=JSON.parse(localStorage.getItem('tideline.panels.v2'));}catch(e){}(Array.isArray(saved)?saved:['insp','tracker','lists']).forEach(k=>{if(PANELS.some(p=>p[0]===k))HID.add(k);});}
 function applyPanels(){for(const [k] of PANELS)app.classList.toggle('x-'+k,HID.has(k));const all=HID.has('all');app.classList.toggle('x-all',all);$('#pbtn').classList.toggle('on',all);
-  try{localStorage.setItem('tideline.panels',JSON.stringify([...HID].filter(k=>k!=='all')));}catch(e){}
+  try{localStorage.setItem('tideline.panels.v2',JSON.stringify([...HID].filter(k=>k!=='all')));}catch(e){}
   const ck='<svg class="i" viewBox="0 0 20 20"><path d="M5 10.5l3.2 3.2L15 7"/></svg>';
   $('#pmenu').innerHTML=PANELS.map(([k,l])=>`<button role="menuitemcheckbox" aria-checked="${!HID.has(k)}" data-pt="${k}">${ck}${l}</button>`).join('')+`<hr><button role="menuitemcheckbox" aria-checked="${all}" data-pt="all">${ck}Hide everything<kbd>H</kbd></button>`;
   setShift();}
@@ -1509,6 +1596,7 @@ function frame(now){
   uT.value+=rdt*(speed?1:.25);
   for(const c of cranes){c.sync();if(c.kind==='sts')syncBoom(c);}
   for(const t of trucks)t.sync();
+  for(const p of peds)p.sync(rdt);
   tug.position.set(Math.sin(simT*.018)*260,0,-92+Math.sin(simT*.05)*6);tug.rotation.y=Math.cos(simT*.018)>0?0:Math.PI;
   if(colorBy==='dwell'&&now-dwT>20000){dwT=now;repaintAll();}
   if(dirtyC){CIM.instanceMatrix.needsUpdate=true;dirtyC=false;}

@@ -41,4 +41,6 @@ Lệnh này kiểm tra cú pháp rồi ghi lại `index.html` và `dist/tideline
 
 - Số ngẫu nhiên dùng hạt giống cố định trong `world.js` (`seed`), nên mỗi lần mở trang bắt đầu từ cùng một trạng thái; sau đó diễn biến có thể lệch nhau theo tốc độ khung hình.
 - Đơn vị trong cảnh là mét; container là loại 40 feet.
+- Xe không đi xuyên qua nhau: mỗi xe quét đường phía trước để phanh khi có xe hoặc người, và phải đặt trước đoạn đường của mình qua mỗi giao lộ (phần "traffic control" trong `world.js`). Xe rảnh đỗ ở làn chờ trên cầu tàu, không chiếm làn làm hàng.
+- Người điều phối (tín hiệu viên cầu tàu, nhân viên cổng, đốc công bãi) nằm ở phần "people" trong `world.js`.
 - Tên cảng, tàu, hãng tàu và hãng xe đều là hư cấu.
