@@ -8,7 +8,7 @@ const rr=(a,b)=>a+rnd()*(b-a), ri=(a,b)=>Math.floor(rr(a,b+1)), pick=a=>a[Math.f
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t, pad2=n=>String(n).padStart(2,'0');
 const col=h=>new T.Color(h).convertSRGBToLinear();
 const small=matchMedia('(max-width:760px)').matches;
-let simT=0, colorBy='natural';
+let simT=0, colorBy='natural', dayOff=0;   // dayOff: seconds added to the terminal clock when the time of day is changed
 
 /* ---------- renderer, light ---------- */
 let renderer;
@@ -19,21 +19,22 @@ renderer.outputEncoding=T.sRGBEncoding;renderer.toneMapping=T.ACESFilmicToneMapp
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
 const scene=new T.Scene(), HAZE=col(0xefcba2);
 scene.background=HAZE;scene.fog=new T.Fog(HAZE,400,1600);
-const cam=new T.PerspectiveCamera(18,1,20,4000);
+const cam=new T.PerspectiveCamera(18,1,20,9000);
 const SUN=V(-0.80,0.45,0.40).normalize(), SM=small?2048:4096;
 const sun=new T.DirectionalLight(col(0xffc88e),3.3);sun.castShadow=true;sun.shadow.mapSize.set(SM,SM);sun.shadow.bias=-0.0004;sun.shadow.normalBias=0.22;
 sun.shadow.camera.near=40;sun.shadow.camera.far=1200;scene.add(sun,sun.target);
-scene.add(new T.HemisphereLight(col(0xa6b8e0),col(0xc9b29a),.8));
+const hemi=new T.HemisphereLight(col(0xa6b8e0),col(0xc9b29a),.8);scene.add(hemi);
 const fill=new T.DirectionalLight(col(0xa9b6e6),.16);fill.position.set(.7,.5,.6);scene.add(fill);
 
-const envTex=(()=>{try{const sc=new T.Scene(),g=new T.SphereGeometry(50,32,16),p=g.attributes.position,c=new Float32Array(p.count*3),hz=[1.5,1.02,.66],zn=[.3,.46,.86],gd=[.5,.44,.4];
+let envTex=(()=>{try{const sc=new T.Scene(),g=new T.SphereGeometry(50,32,16),p=g.attributes.position,c=new Float32Array(p.count*3),hz=[1.5,1.02,.66],zn=[.3,.46,.86],gd=[.5,.44,.4];
   for(let i=0;i<p.count;i++){const y=p.getY(i)/50,ax=(p.getX(i)*SUN.x+p.getZ(i)*SUN.z)/50,w=y>0?Math.pow(y,.45):0,warm=1+.6*Math.max(0,ax);for(let k=0;k<3;k++)c[i*3+k]=y>0?hz[k]*warm*(1-w)+zn[k]*w:gd[k]+(hz[k]*.5-gd[k])*Math.max(0,1+y*6);}
   g.setAttribute('color',new T.BufferAttribute(c,3));sc.add(new T.Mesh(g,new T.MeshBasicMaterial({vertexColors:true,side:T.BackSide})));
   const sm=new T.Mesh(new T.SphereGeometry(3.2,16,8),new T.MeshBasicMaterial({color:new T.Color(14,9,4.5)}));sm.position.copy(SUN).multiplyScalar(44);sc.add(sm);
   const pm=new T.PMREMGenerator(renderer),t=pm.fromScene(sc,.015).texture;pm.dispose();return t;}catch(e){return null;}})();
-const mats={};
+const mats={},envMats=[],wetMats=[];   // envMats: reflective materials, re-pointed when the sky changes; wetMats: ground that darkens and shines in rain
+const wetReg=m=>{wetMats.push({m,r:m.roughness,c:m.color.clone()});return m;};
 const M_=(hex,o)=>{const k=hex+(o?JSON.stringify(o):'');if(mats[k])return mats[k];const p=Object.assign({color:col(hex),roughness:.82,metalness:0},o||{});if(p.emissive!==undefined)p.emissive=col(p.emissive);
-  if(p.env!==undefined){if(envTex){p.envMap=envTex;p.envMapIntensity=p.env;}else p.metalness=Math.min(p.metalness,.3);delete p.env;}return mats[k]=new T.MeshStandardMaterial(p);};
+  if(p.env!==undefined){if(envTex){p.envMap=envTex;p.envMapIntensity=p.env;}else p.metalness=Math.min(p.metalness,.3);delete p.env;}const m=mats[k]=new T.MeshStandardMaterial(p);if(m.envMap)envMats.push({m,k:m.envMapIntensity});return m;};
 const _m=new T.Matrix4(),_e=new T.Euler(),_o=new T.Object3D(),_col=new T.Color();
 function merge(gs){let n=0;for(const g of gs)n+=g.attributes.position.count;const p=new Float32Array(n*3),nm=new Float32Array(n*3),uv=new Float32Array(n*2);let o=0;
   for(const g of gs){p.set(g.attributes.position.array,o*3);nm.set(g.attributes.normal.array,o*3);if(g.attributes.uv)uv.set(g.attributes.uv.array,o*2);o+=g.attributes.position.count;g.dispose();}
@@ -54,15 +55,15 @@ function plate(text,w,h,fg='#ffffff'){const c=document.createElement('canvas');c
 const CL=12.2,CH=2.6,CW=2.44,BAYP=12.9,ROWP=2.75,MAXT=4,NB=6,NR=5,BED=1.32,DECK=3.6,BZ=-11.6;
 // quay has two eastbound lanes between the crane legs: LQ is worked under the cranes, LS is where idle tractors stand by
 const LQ=8,LS=13,HZ=[10,32,58,84,108],ROADS=[8,13,32,58,84,108],HDIR={8:1,13:1,32:-1,58:-1,84:-1,108:1},VXS=[-112,0,112],OFF=2.3,LANES=[32,58,84];
-const GX0=-134,GX1=134,GZ1=160,FENCE_Z=140,GATE_Z=132;
+const GX0=-134,GX1=134,GZ1=160,FENCE_Z=140,GATE_Z=132,GATE_IN=GATE_Z+6.5,GATE_OUT=GATE_Z-6.5,BOOM=5.3;
 
 /* ---------- water ---------- */
-const uT={value:0};
+const uT={value:0},waterU={uGl:{value:new T.Color(1,.84,.58)},uGlI:{value:1},uSun3:{value:new T.Vector3(.9,.37,-.25)},uRain:{value:0}};
 const waterMat=new T.MeshStandardMaterial({color:col(0x2a8791),roughness:.45,metalness:0});
-waterMat.onBeforeCompile=sh=>{sh.uniforms.uT=uT;
+waterMat.onBeforeCompile=sh=>{sh.uniforms.uT=uT;Object.assign(sh.uniforms,waterU);
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvWP=(modelMatrix*vec4(position,1.0)).xyz;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-varying vec3 vWP;uniform float uT;
+varying vec3 vWP;uniform float uT,uGlI,uRain;uniform vec3 uGl,uSun3;
 float hs(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float nz(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hs(i),hs(i+vec2(1,0)),f.x),mix(hs(i+vec2(0,1)),hs(i+vec2(1,1)),f.x),f.y);}`)
   .replace('#include <color_fragment>',`#include <color_fragment>
@@ -72,12 +73,16 @@ float w2=sin(p.y*.33-uT*.6+sin(p.x*.07-uT*.2)*2.4)*.5+.5;
 float rip=w1*w2;
 float n=nz(vec2(p.x*.05+uT*.05,p.y*.4-uT*.13));
 float n2=nz(vec2(p.x*.12-uT*.06,p.y*.9+uT*.11));
-float toSun=clamp(.6-p.x*.0030-p.y*.0016,0.,1.);
-float gl=(smoothstep(.62,.7,n)*.55+smoothstep(.72,.78,n2)*.45)*(.18+.82*toSun);
+// glitter path: strongest where the eye looks down the sun's reflection
+vec3 eye=normalize(cameraPosition-vWP);
+float toSun=.12+.88*pow(max(dot(eye,vec3(-uSun3.x,uSun3.y,-uSun3.z)),0.),4.);
+float dc=distance(vWP,cameraPosition);
+float gl=(smoothstep(.62,.7,n)*.55+smoothstep(.72,.78,n2)*.45)*(.14+.86*toSun)*uGlI*mix(1.,.3,smoothstep(500.,2600.,dc));
 vec3 base=mix(diffuseColor.rgb*.82,diffuseColor.rgb*1.1,rip);
-base=mix(base,vec3(.95,.55,.28),.03+.06*toSun);
-diffuseColor.rgb=mix(base,vec3(1.,.84,.58),gl*.7);`);};
-const water=new T.Mesh(new T.PlaneGeometry(3200,1800),waterMat);water.rotation.x=-Math.PI/2;water.position.set(0,-2.2,-894);water.receiveShadow=true;scene.add(water);
+base=mix(base,uGl*.8,(.02+.06*toSun)*uGlI);
+if(uRain>.01)base=mix(base,base*1.35+.02,uRain*smoothstep(.5,.75,nz(p*2.6+vec2(uT*5.,-uT*4.)))*.5);
+diffuseColor.rgb=mix(base,uGl,gl*.5);`);};
+const water=new T.Mesh(new T.PlaneGeometry(16000,16000),waterMat);water.rotation.x=-Math.PI/2;water.position.set(0,-2.2,0);water.receiveShadow=true;water.renderOrder=5;scene.add(water);   // after the land, so water hidden under it is never shaded
 
 /* ---------- yard model ---------- */
 const mkStack=(x,z,bay,row)=>({x,z,y0:0,items:[],rin:0,rout:0,blk:null,bay,row,top(){return this.y0+this.items.length*CH;}});
@@ -97,7 +102,7 @@ const yard={
 
 /* ---------- ground: flat colour + crisp geometric markings ---------- */
 const MK=new Builder(),mkm={};
-const mkMat=hex=>mkm[hex]||(mkm[hex]=new T.MeshStandardMaterial({color:col(hex),roughness:.92,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+const mkMat=hex=>mkm[hex]||(mkm[hex]=wetReg(new T.MeshStandardMaterial({color:col(hex),roughness:.92,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2})));
 function quad(hex,x,z,w,d,y=.02){const g=new T.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);MK.add(mkMat(hex),g,x+w/2,y,z+d/2);}
 function ln(hex,x1,z1,x2,z2,w=.16,on=0,off=0,y=.035){const len=Math.hypot(x2-x1,z2-z1),h=z1===z2;
   const seg=(a,b)=>{if(h)quad(hex,Math.min(x1,x2)+a,z1-w/2,b-a,w,y);else quad(hex,x1-w/2,Math.min(z1,z2)+a,w,b-a,y);};
@@ -115,7 +120,7 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   for(let i=0;i<5200;i++){const v=rnd();g.fillStyle=v<.5?`rgba(0,0,0,${.03+.07*rnd()})`:`rgba(255,255,255,${.1+.2*rnd()})`;const s=1+rnd()*2.2;g.fillRect(rnd()*256,rnd()*256,s,s);}
   for(let i=0;i<26;i++){g.strokeStyle=`rgba(0,0,0,${.03+.04*rnd()})`;g.lineWidth=.7;g.beginPath();const x=rnd()*256,y=rnd()*256;g.moveTo(x,y);g.lineTo(x+rr(-40,40),y+rr(-40,40));g.stroke();}
   const nt=new T.CanvasTexture(c);nt.wrapS=nt.wrapT=T.RepeatWrapping;nt.repeat.set(34,20);nt.encoding=T.sRGBEncoding;nt.anisotropy=renderer.capabilities.getMaxAnisotropy();
-  const base=new T.Mesh(new T.PlaneGeometry(GX1-GX0,GZ1),new T.MeshStandardMaterial({color:col(0x8b8b8e),map:nt,roughness:.95}));base.rotation.x=-Math.PI/2;base.position.set(0,0,GZ1/2);base.receiveShadow=true;scene.add(base);
+  const base=new T.Mesh(new T.PlaneGeometry(GX1-GX0,GZ1),wetReg(new T.MeshStandardMaterial({color:col(0x8b8b8e),map:nt,roughness:.95})));base.rotation.x=-Math.PI/2;base.position.set(0,0,GZ1/2);base.receiveShadow=true;scene.add(base);
   const WH=0xf1eee6,YE=0xe2a81a,CONC=0xb8b6b0,PADC=0xa2a19e,JOINT=0xa09e98;
   quad(CONC,GX0,0,GX1-GX0,25,.012);
   for(let x=GX0+7;x<GX1;x+=7)ln(JOINT,x,1.8,x,25,.07,0,0,.02);
@@ -138,7 +143,7 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   for(let x=-126;x<=126;x+=14)decal(String(Math.round((x+126)/14)+1),x,4.6,.9,'#8a857f');
   // gate apron
   ln(WH,-9.5,112.6,-9.5,GZ1);ln(WH,9.5,112.6,9.5,GZ1);ln(YE,-.12,112.6,-.12,GZ1,.12);ln(YE,.12,112.6,.12,GZ1,.12);
-  quad(WH,-4,GATE_Z-5.4,3.6,.45,.035);quad(WH,.4,GATE_Z+5,3.6,.45,.035);
+  quad(WH,-4,GATE_Z+4.35,3.6,.45,.035);quad(WH,.4,GATE_Z-4.8,3.6,.45,.035);
   decal('OUT',-OFF,150,1.5,'#f1eee6');decal('IN',OFF,154,1.5,'#f1eee6');arrow(WH,-OFF,145.5,-Math.PI/2);arrow(WH,OFF,149,Math.PI/2);
   for(let x=34;x<=70;x+=3)ln(WH,x,130.5,x,135.5,.12);
   quad(0xa69a80,GX0,FENCE_Z+.3,GX1-GX0,GZ1-FENCE_Z-.3,.012);quad(0x8b8b8e,-9.5,FENCE_Z,19,GZ1-FENCE_Z,.016);
@@ -152,10 +157,6 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   B.box(conc,GX1-GX0,5,1.4,0,-2.5,-.7);B.box(M_(0x8f897f),GX1-GX0,.4,1.7,0,-.02,-.78);
   for(let x=-126;x<=126;x+=14){B.cyl(dark,.36,.7,x,.35,2.1,0,0,0,10,.46);B.cyl(dark,.56,.16,x,.78,2.1,0,0,0,10);}
   for(let x=-128;x<=128;x+=6.4)if(Math.abs(x)>3)B.box(dark,1.4,2.6,.7,x,-1.4,-1.72);
-  const land=new T.Mesh(new T.PlaneGeometry(3200,1400),M_(0xbfae8c,{roughness:.96}));land.rotation.x=-Math.PI/2;land.position.set(0,-.09,700);land.receiveShadow=true;scene.add(land);
-  for(const s of [-1,1])B.box(M_(0xa99b80),1466,.8,10,s*867,-1.35,-4.2,.3,0,0);
-  const rd=M_(0x8b8b8e,{roughness:.95});
-  for(const [w,d,x,z] of [[19,500,0,410],[2400,11,0,196]]){const r=new T.Mesh(new T.PlaneGeometry(w,d),rd);r.rotation.x=-Math.PI/2;r.position.set(x,-.05,z);r.receiveShadow=true;scene.add(r);}
   // perimeter fence
   const fm=new T.MeshStandardMaterial({color:col(0xdfe3e2),transparent:true,opacity:.3,roughness:.5});
   const F=new Builder();
@@ -168,7 +169,6 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   for(const x of [-15,-5.8,5.8,15])B.box(white,.5,6.1,.5,x,3.05,GATE_Z);
   for(const x of [-5.8,5.8]){B.box(white,1.9,2.7,3.2,x,1.55,GATE_Z);B.box(glass,1.95,1,3.25,x,2.05,GATE_Z);B.box(roofD,2.3,.18,3.6,x,3,GATE_Z);B.box(conc,2.5,.22,6,x,.11,GATE_Z);}
   B.box(conc,.9,.22,12,0,.11,GATE_Z);
-  for(const [x,z,s] of [[-4.2,GATE_Z-5,1],[4.2,GATE_Z+5.4,-1]]){B.box(hiv,.45,1.1,.45,x,.55,z);B.box(M_(0xd43a2c),.1,.1,3.4,x,2.6,z+s*.2,s*.9,0,0);}
   for(const z of [GATE_Z+16]){for(const x of [-9.8,9.8])B.box(steel,.3,6.6,.3,x,3.3,z);B.box(steel,19.9,.3,.3,0,6.5,z);for(const x of [-OFF,OFF]){B.box(dark,.5,.4,.5,x,6.1,z);B.box(lamp,.3,.2,.1,x,5.9,z-.3);}}
   // office and control tower
   B.box(cream,32,9.6,11,50,4.8,124);for(const y of [2.4,5.6,8.4])B.box(glass,32.1,1.4,11.1,50,y,124);B.box(M_(0xd8d0c2),33,.5,12,50,9.85,124);
@@ -185,23 +185,39 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   // people, for scale
   const person=(x,z,v)=>{B.cyl(dark,.13,.85,x,.43,z,0,0,0,6);B.cyl(v,.2,.62,x,1.16,z,0,0,0,8);B.add(skin,new T.SphereGeometry(.14,8,6),x,1.6,z);B.cyl(white,.16,.1,x,1.72,z,0,0,0,8);};
   [[-100,1.3],[-36,1.4],[28,1.3],[102,1.4],[-8.3,GATE_Z-1],[8.2,GATE_Z+1.5],[40,131],[41.2,131.6],[58,130.4],[-60,133.4],[-58.6,134],[-8.8,50.8],[103.6,77],[-103.4,54.2],[6.6,27]].forEach(([x,z],i)=>person(x,z,i%3?hiv:hio));
-  // background town
-  const tones=[0xe2d6c4,0xd9c0a6,0xe9dfd0,0xc9ad94,0xd6c5b4,0xcfd3d0];
-  for(let i=0;i<34;i++){const x=rr(-520,520),z=rr(214,420);if(Math.abs(x)<26)continue;const w=rr(14,36),d=rr(12,28),h=rr(6,24);
-    B.box(M_(pick(tones)),w,h,d,x,h/2,z);B.box(M_(pick([0xb65a34,0x8f8f8c,0xc0916c])),w+.8,.5,d+.8,x,h+.25,z);if(h>9)for(let y=3;y<h-1;y+=3.2)B.box(glass,w+.1,1.2,d+.1,x,y,z);}
-  for(const s of [-1,1])for(let i=0;i<7;i++){const x=s*rr(165,470),z=rr(36,170),w=rr(22,50),d=rr(18,32),h=rr(7,13);B.box(M_(pick(tones)),w,h,d,x,h/2,z);B.box(M_(pick([0xb65a34,0x8c9a96,0xc0916c])),w+1,.6,d+1,x,h+.3,z);}
-  for(let i=0;i<10;i++){const x=-360+i*80,c=i%2?0xc8402e:0x2d8659;B.cyl(M_(c),1.1,2.2,x,-1.4,-104+(i%2)*10,0,0,0,10,.5);B.cyl(M_(c),.12,2.4,x,.8,-104+(i%2)*10);}
   scene.add(B.build());
   // trees
   const pts=[];for(let x=-190;x<=190;x+=10){if(Math.abs(x)>16)pts.push([x+rr(-1.5,1.5),167+rr(-1,1)]);}
-  for(let z=30;z<=160;z+=11){pts.push([-142+rr(-1,1),z]);pts.push([142+rr(-1,1),z]);}
-  for(let i=0;i<110;i++){const x=rr(-560,560),z=rr(205,440);if(Math.abs(x)<16)continue;pts.push([x,z]);}
+  for(let z=63;z<=160;z+=11)pts.push([-142+rr(-1,1),z]);for(let z=41;z<=160;z+=11)pts.push([142+rr(-1,1),z]);
   const crown=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),new T.MeshStandardMaterial({roughness:.9,flatShading:true}),pts.length),trunk=new T.InstancedMesh(new T.CylinderGeometry(.18,.26,1,6),M_(0x5f4636),pts.length);
   const greens=[0x6f8f45,0x5f8a4c,0x869a48,0x55804f];
   pts.forEach(([x,z],i)=>{const s=rr(.8,1.3);_o.rotation.set(0,rr(0,6),0);_o.position.set(x,2*s,z);_o.scale.set(1,4*s,1);_o.updateMatrix();trunk.setMatrixAt(i,_o.matrix);
     _o.position.set(x,5.6*s,z);_o.scale.set(2.6*s,3.2*s,2.6*s);_o.updateMatrix();crown.setMatrixAt(i,_o.matrix);crown.setColorAt(i,col(pick(greens)));});
   for(const m of [crown,trunk]){m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;scene.add(m);}
 })();
+
+/* ---------- gate barriers ---------- */
+// one boom per lane on the far side of the booth: a truck stops at the line, is checked, and the arm lifts for it
+const gates=[];
+(function barriers(){
+  const cab=M_(0xe9a815,{roughness:.55}),dark=M_(0x2a2629),conc=M_(0xa9a297),white=M_(0xf3f1ec,{roughness:.6}),red=M_(0xd0281f,{roughness:.6}),steel=M_(0x6f6a6c,{roughness:.6}),
+    lampR=M_(0xff3b2a,{emissive:0xff2a1a,emissiveIntensity:1.6}),lampG=M_(0x4be37a,{emissive:0x2bd45f,emissiveIntensity:1.6}),L=4.3,PY=1.14,PZ=.33;
+  for(const [x,z,dir,ry] of [[4.5,GATE_Z-BOOM,-1,Math.PI],[-4.5,GATE_Z+BOOM,1,0]]){
+    const S=new Builder(),A=new Builder();
+    S.box(conc,.95,.22,.95,0,.11,0);S.box(dark,.5,.12,.56,0,.28,0);S.box(cab,.44,.98,.5,0,.83,0);S.box(dark,.5,.06,.56,0,1.35,0);
+    S.box(steel,.1,.82,.1,L-.15,.63,PZ);S.box(dark,.22,.04,.22,L-.15,1.05,PZ);for(const o of [-.085,.085])S.box(dark,.22,.16,.03,L-.15,1.13,PZ+o);
+    A.cyl(dark,.13,.16,0,0,-.03,Math.PI/2,0,0,14);A.box(white,L+.15,.12,.07,(L-.15)/2,0,0);A.box(dark,.6,.2,.1,-.42,0,0);
+    for(let a=.35;a+.45<=L-.1;a+=.9)A.box(red,.45,.126,.076,a+.225,0,0);A.box(red,.08,.16,.1,L-.04,0,0);
+    const g=new T.Group(),arm=A.build(),lamp=new T.Mesh(new T.BoxGeometry(.16,.12,.16),lampR);
+    arm.position.set(0,PY,PZ);lamp.position.set(0,1.44,0);g.add(S.build(),arm,lamp);g.position.set(x,0,z);g.rotation.y=ry;scene.add(g);
+    gates.push({x:dir<0?OFF:-OFF,z,dir,a:0,pass:null,green:false,arm,lamp,mats:[lampR,lampG]});}
+})();
+// the arm stays up for the truck it was raised for until its tail is through, and never comes down on a vehicle
+function stepGates(dt){for(const g of gates){const t=g.pass;
+  if(t&&(!t.active||(g.dir<0?t.body.every(q=>q.z<g.z-1.5):t.body.every(q=>q.z>g.z+1.5))))g.pass=null;
+  let up=!!g.pass;if(!up)for(const o of trucks){if(!o.active)continue;for(const q of o.body)if(Math.abs(q.x-g.x)<2.2&&Math.abs(q.z-g.z)<1.2){up=true;break;}if(up)break;}
+  const tg=up?1.5:0;if(g.a!==tg){const st=1.5*dt,d=tg-g.a;g.a=Math.abs(d)<=st?tg:g.a+Math.sign(d)*st;g.arm.rotation.z=g.a;const gr=g.a>1.25;if(gr!==g.green){g.green=gr;g.lamp.material=g.mats[gr?1:0];}}}}
+function* openGate(g,tr){yield* until(()=>!g.pass||g.pass===tr);g.pass=tr;yield* until(()=>g.a>1.3);}
 
 /* ---------- containers: one instanced mesh, detailed atlas ---------- */
 const CAP=1300,boxAt=new Array(CAP),freeIdx=[];for(let i=CAP-1;i>=0;i--)freeIdx.push(i);
@@ -272,7 +288,7 @@ function* until(f){while(!f())yield;}
 function* moveTo(c,tg){for(;;){const dt=(yield)||0;let done=true;for(const k in tg){const d=tg[k]-c[k],ad=Math.abs(d);if(ad<1e-3){c[k]=tg[k];continue;}const v=Math.min(c.sp[k],Math.max(c.sp[k]*.2,ad*2.6)),st=v*dt;if(ad<=st)c[k]=tg[k];else{c[k]+=Math.sign(d)*st;done=false;}}if(done)return;}}
 const cos=[],stats={moves:[],total:412,turn:[7.6,8.3,6.9,7.4],gateIn:0,gateDone:37,rehandles:0};
 for(let t=-200;t<0;t+=5.6)stats.moves.push(t);
-const clockAt=t=>{const s=16*3600+42*60+t*6,h=((Math.floor(s/3600)%24)+24)%24,m=((Math.floor(s/60)%60)+60)%60;return pad2(h)+':'+pad2(m);};
+const clockAt=t=>{const s=16*3600+42*60+dayOff+t*6,h=((Math.floor(s/3600)%24)+24)%24,m=((Math.floor(s/60)%60)+60)%60;return pad2(h)+':'+pad2(m);};
 const events=[];let unread=0;
 function ev(kind,text,ent){events.unshift({t:clockAt(simT),kind,text,ent});if(events.length>40)events.pop();if(simT>80)unread++;}
 
@@ -302,7 +318,7 @@ function makeSTS(id,berth,g0,range){
   for(const x of [-3,3]){F.beam(R,.8,V(x,TOP+1,Z1+.6),V(x*.4,44.5,6.5));F.beam(R,.5,V(x*.4,44.5,6.5),V(x,TOP+2.8,25));}
   F.box(R,3.2,1,1,0,44.5,6.5);F.box(lamp,.5,.5,.5,0,45.4,6.5);
   F.box(white,9.6,4.6,8,0,TOP+5.3,19.6);F.box(Rd,10,.4,8.4,0,TOP+7.8,19.6);F.box(glass,9.7,1,2.6,0,TOP+5.6,16.4);F.box(steel,2,1.2,1.6,-2.6,TOP+8.6,20);
-  for(const z of [7,13,21])F.box(lamp,4.2,.2,.5,0,TOP+1.15,z);
+  for(const z of [7,13,21])F.box(lamp,4.2,.2,.5,0,TOP+1.15,z);c.lampPts=[[0,TOP+1,7],[0,TOP+1,13],[0,TOP+1,21]];c.boomLamps=[[0,-1.1,-10],[0,-1.1,-22]];
   F.box(steel,1.4,2.6,2.6,LX+1.4,4.6,Z2,0,0,0);F.cyl(steel,1.5,.5,LX+1.4,4.6,Z2-1.6,Math.PI/2,0,0,16);
   c.group.add(F.build());
   for(const [z,ry,y,w] of [[Z2+.72,0,2.5,5.2],[23.62,0,TOP+5.3,5.8]]){const p=plate(id.replace('-',' '),w,w*.26);p.position.set(0,y,z);p.rotation.y=ry;c.group.add(p);}
@@ -326,7 +342,7 @@ function makeRTG(id,blk){
     F.box(Y,2*LXR+.8,.9,.9,0,2.4,z);F.box(Y,2*LXR+.8,1,1,0,HT+1.4,z);F.beam(Y,.4,V(-LXR,2.6,z),V(0,7.5,z));F.beam(Y,.4,V(LXR,2.6,z),V(0,7.5,z));}
   for(const x of [-2.4,2.4])F.box(Y,.8,1.5,zS-zN+1.6,x,HT+1.4,(zN+zS)/2);
   F.box(white,3.6,2.3,2.2,0,4.2,zS+.3);F.box(steel,3.8,.2,2.4,0,5.4,zS+.3);F.box(steel,.12,HT-5,.8,LXR+.55,HT/2+2.5,zS);
-  for(const z of [zN+3,(zN+zS)/2,zS-3])F.box(lamp,3.6,.2,.4,0,HT+.55,z);
+  for(const z of [zN+3,(zN+zS)/2,zS-3])F.box(lamp,3.6,.2,.4,0,HT+.55,z);c.lampPts=[[0,HT+.4,zN+3],[0,HT+.4,(zN+zS)/2],[0,HT+.4,zS-3]];
   c.group.add(F.build());
   const p=plate(id.replace('-',' '),4.6,1.05,'#1c191f');p.position.set(0,HT+1.4,zS+.52);c.group.add(p);
   const Tr=new Builder();Tr.box(white,5.6,.9,3.6,0,0,0);Tr.box(white,1.7,2,1.9,-2.2,-1.5,-.2);Tr.box(glass,1.75,1,1.95,-2.2,-1.4,-.2);
@@ -344,10 +360,10 @@ const berths=[{id:'B1',name:'Berth 1',cx:-62,half:-1,exitX:0,lapX:-96,cranes:[],
 // a crane is worth driving to if it still has lifts to hand out, or is already holding a box for a truck
 berths.forEach(b=>{b.pickCrane=()=>{const v=b.vessel,dry=v&&v.mode==='discharge'&&v.jobsLeft<=0;let best=null;for(const c of b.cranes){if(dry?!c.cargo:c.exhausted)continue;if(!best||c.assigned<best.assigned)best=c;}return best||b.cranes.find(c=>c.cargo)||b.cranes[0];};});
 const planCall=mode=>{const k=vN++;return {name:VNAMES[k%VNAMES.length],line:LINES[k%LINES.length],hull:HULLS[k%HULLS.length],mode,planned:ri(30,38),voy:ri(101,389)+(mode==='discharge'?'N':'S')};};
-const etdOf=v=>v.phase==='work'?simT+(v.planned-v.done)*13.5+25:v.phase==='done'?simT+6:v.phase==='depart'?v.tDep:simT+55+v.planned*13.5;
+const etdOf=v=>v.phase==='work'?simT+(v.planned-v.done)*13.5+25:v.phase==='done'?simT+6:v.phase==='depart'?(v.tDep||simT+20):simT+110+v.planned*13.5;
 function makeVessel(b,plan){
   const {name,line,mode}=plan;
-  const v={kind:'vessel',id:name,name,line,mode,voy:plan.voy,berth:b,x:0,z:0,done:0,planned:plan.planned,jobsLeft:0,toDispatch:0,phase:'arrive',status:'Arriving',last:null,imo:'IMO 9'+ri(100000,899999),tArr:simT};
+  const v={kind:'vessel',id:name,name,line,mode,voy:plan.voy,berth:b,x:0,z:0,rot:0,px:0,pz:0,wake:null,done:0,planned:plan.planned,jobsLeft:0,toDispatch:0,phase:'arrive',status:'Arriving',last:null,imo:'IMO 9'+ri(100000,899999),tArr:simT};
   const B=new Builder(),white=M_(0xf1efe9,{roughness:.6}),glass=M_(0x1f3640,{roughness:.2,metalness:.2}),deck=M_(0x7d5a4a),steel=M_(0x6f6a6c),lamp=M_(0xfff0c8,{emissive:0xffc978,emissiveIntensity:1}),hullM=M_(plan.hull,{roughness:.5});
   const sh=new T.Shape();sh.moveTo(-55,-9.8);sh.lineTo(40,-9.8);sh.quadraticCurveTo(54,-8.8,60,0);sh.quadraticCurveTo(54,8.8,40,9.8);sh.lineTo(-55,9.8);sh.quadraticCurveTo(-57.4,0,-55,-9.8);
   const hg=new T.ExtrudeGeometry(sh,{depth:6.8,bevelEnabled:false,curveSegments:14});hg.rotateX(Math.PI/2);B.add(hullM,hg,0,DECK,0);
@@ -370,11 +386,13 @@ function makeVessel(b,plan){
   const nm=plate(name.replace('MV ','').toUpperCase(),13,1.7,'#f1efe9');v.tex=nm.material.map;
   for(const s of [1,-1]){const p=s>0?nm:nm.clone();p.position.set(37,.9,s*9.82);p.rotation.y=s<0?Math.PI:0;v.group.add(p);}
   scene.add(v.group);
-  v.cols=[];for(let i=0;i<6;i++){const stacks=[];for(let r=0;r<6;r++){const lx=-32+i*BAYP,lz=(r-2.5)*ROWP;stacks.push({lx,lz,y0:DECK+.3,items:[],rin:0,rout:0,v,get x(){return v.x+lx;},get z(){return v.z+lz;},top(){return this.y0+this.items.length*CH;}});}
+  v.cols=[];for(let i=0;i<6;i++){const stacks=[];for(let r=0;r<6;r++){const lx=-32+i*BAYP,lz=(r-2.5)*ROWP;stacks.push({lx,lz,y0:DECK+.3,items:[],rin:0,rout:0,v,get x(){return v.x+lx*Math.cos(v.rot)+lz*Math.sin(v.rot);},get z(){return v.z-lx*Math.sin(v.rot)+lz*Math.cos(v.rot);},top(){return this.y0+this.items.length*CH;}});}
     v.cols.push({stacks,i,bay:pad2(22-i*4),get x(){return v.x-32+i*BAYP;}});}
   v.cols.forEach((cl,ci)=>cl.stacks.forEach(st=>{const served=ci<2||ci>3,n=!served?(rnd()<.8?MAXT:3):(mode==='discharge'?(rnd()<.85?ri(2,4):1):(rnd()<.7?ri(0,2):3));for(let j=0;j<n;j++){const bx=new Box(rnd()<.75?line:null);bx.where='ship';bx.ref=v;bx.dir=served&&mode==='discharge'?'Import':'Transship';if(bx.customs==='Hold')bx.customs='Pending';st.items.push(bx);}}));
-  v.setPos=(x,z)=>{v.x=x;v.z=z;v.group.position.set(x,0,z);for(const cl of v.cols)for(const st of cl.stacks){const sx=st.x,sz=st.z;for(let j=0;j<st.items.length;j++)st.items[j].set(sx,st.y0+j*CH,sz);}};
-  v.center=q=>q.set(v.x-46,DECK+27,v.z);v.frame=()=>({x:v.x+1.5,y:6.5,z:v.z,rot:0,d:[120,20,21.5]});
+  // heading: 0 is bow towards +x (west); the boxes on deck are placed in world space, so they are turned with her
+  v.setPos=(x,z,rot=0)=>{v.x=x;v.z=z;v.rot=rot;v.group.position.set(x,0,z);v.group.rotation.y=rot;for(const cl of v.cols)for(const st of cl.stacks){const sx=st.x,sz=st.z;for(let j=0;j<st.items.length;j++)st.items[j].set(sx,st.y0+j*CH,sz,rot);}};
+  v.center=q=>q.set(v.x-46*Math.cos(v.rot),DECK+27,v.z+46*Math.sin(v.rot));v.frame=()=>({x:v.x+1.5*Math.cos(v.rot),y:6.5,z:v.z-1.5*Math.sin(v.rot),rot:v.rot,d:[120,20,21.5]});
+  v.group.add(glowPts([[48,DECK+10.9,0,0xfff3d6],[-45.5,DECK+23,0,0xfff3d6],[-57,DECK+2.4,0,0xfff3d6],[-45.8,DECK+15.2,-10.2,0xff3020],[-45.8,DECK+15.2,10.2,0x30e060],[-41.5,DECK+9,-8.3,0xffe2b0],[-41.5,DECK+9,8.3,0xffe2b0],[-41.5,DECK+3,-8.3,0xffe2b0],[-41.5,DECK+3,8.3,0xffe2b0]],1));
   Object.defineProperty(v,'label',{get:()=>v.name});
   v.dispose=()=>{for(const cl of v.cols)for(const st of cl.stacks)st.items.forEach(bx=>bx.free());scene.remove(v.group);v.group.traverse(o=>{if(o.geometry)o.geometry.dispose();});v.tex.dispose();const i=ents.indexOf(v);if(i>=0)ents.splice(i,1);v.dead=true;if(sel===v)select(null);if(tracked===v)tracked=null;};
   ents.push(v);return v;
@@ -384,13 +402,12 @@ function* glide(v,x1,z1,dur,fn){const x0=v.x,z0=v.z;let t=0;while(t<dur){t+=(yie
 function* berthLife(b,mode,warm){
   let first=true,plan=planCall(mode);
   for(;;){
+    if(!first){yield* until(()=>!port.busy);port.busy=b;b.nextAt=simT+ARRIVE_S;tugsAway(b,plan.name);ev('vessel',`${plan.name} inbound for ${b.name} · tugs away`,null);yield* sleep(6);}
     const v=makeVessel(b,plan);b.vessel=v;b.next=planCall(mode==='discharge'?'load':'discharge');
     b.cranes.forEach(c=>{c.col=c.range[0];c.exhausted=false;});
     if(first){v.setPos(b.cx,BZ);v.done=warm;v.tArr=-(330+warm*14);v.tBerth=v.tArr+70;v.tWork=v.tBerth+22;b.cranes.forEach(c=>{c.boom=c.boomT=0;});}
     else{
-      v.setPos(b.cx-430,-54);ev('vessel',`${v.name} inbound for ${b.name}`,v);
-      yield* glide(v,b.cx,-54,34,u=>1-Math.pow(1-u,2.2));
-      v.status='Berthing';yield* glide(v,b.cx,BZ,10,ease);
+      yield* shipArrive(v,b);port.busy=null;
       v.phase='moor';v.status='Mooring';v.tBerth=simT;b.cranes.forEach(c=>c.boomT=0);ev('vessel',`${v.name} all fast at ${b.name}`,v);
       yield* sleep(2.5);yield* until(()=>b.cranes.every(c=>c.boom<.02));v.tWork=simT;
     }
@@ -398,9 +415,9 @@ function* berthLife(b,mode,warm){
     let guard=0;
     while(!(v.done>=v.planned&&b.cranes.every(c=>c.idle&&!c.cargo))){guard+=(yield)||0;if(guard>1500){v.jobsLeft=v.toDispatch=0;if(b.cranes.every(c=>c.idle&&!c.cargo))break;}}
     v.phase='done';v.status='Completed';v.tDone=simT;ev('vessel',`${v.name} completed ${v.done} moves`,v);yield* sleep(4);
-    b.cranes.forEach(c=>c.boomT=1.22);v.phase='depart';v.status='Departing';v.tDep=simT;
-    yield* sleep(4);yield* glide(v,b.cx,-54,10,ease);ev('vessel',`${v.name} sailed from ${b.name}`,null);yield* glide(v,b.cx+470,-60,34,u=>u*u);
-    v.dispose();b.vessel=null;b.nextAt=simT+7+44;yield* sleep(7);plan=b.next;mode=plan.mode;first=false;
+    b.cranes.forEach(c=>c.boomT=1.22);v.phase='depart';v.status='Awaiting tugs';
+    yield* until(()=>!port.busy);port.busy=b;v.tDep=simT;yield* until(()=>b.cranes.every(c=>c.boom>1.1));yield* shipDepart(v,b);port.busy=null;
+    v.dispose();b.vessel=null;b.nextAt=simT+9+ARRIVE_S;yield* sleep(7);plan=b.next;mode=plan.mode;first=false;
   }
 }
 function logMove(v,c,box,from,to){v.done++;c.moves++;stats.total++;stats.moves.push(simT);v.last={box,from,to,crane:c.id};}
@@ -638,8 +655,12 @@ const P=t=>({x:t.pos.x,z:snapZ(t.pos.z)});
 function* drive(tr,pts,opt){
   const path=makePath(pts),last=pts[pts.length-1],prev=pts[pts.length-2],dirx=Math.sign(last.x-prev.x);let s=0;
   tr.path=path;tr.s=0;path.at(0,tr.pos,tr.dir);planZones(tr,path);tr.waitT=0;
+  let bar=opt&&opt.gate||null;
   for(;;){
     const dt=(yield)||0;let goal=path.len;
+    if(bar){   // held at a gate boom: it lifts once the junction beyond is reserved, so nobody ends up parked underneath it
+      if(bar.pass!==tr){const g0=tr.groups[tr.gi];if(!bar.pass&&(!g0||acquire(tr,path,g0,goal,tr.waitT>45))){if(g0)tr.gi++;tr.waitT=0;bar.pass=tr;}else tr.waitT+=dt;}
+      if(bar.pass===tr&&bar.a>1.3){bar=null;if(opt.onGo)opt.onGo();}else{tr.v=0;continue;}}
     if(opt&&opt.stopX){goal=path.len-(last.x-opt.stopX())*dirx;if(goal<s-1.2)return 'missed';if(goal<s)goal=s;}
     if(opt&&opt.abort&&tr.v<.05&&tr.dir.z===0&&HDIR[tr.pos.z]!==undefined&&opt.abort()){tr.v=0;return 'abort';}
     for(const z of tr.zones)if(z.held&&!z.done&&s-tr.tail>z.sOut+.4){z.done=true;const i=z.J.res.findIndex(r=>r.veh===tr&&r.pts===z.pts);if(i>=0)z.J.res.splice(i,1);}
@@ -723,18 +744,17 @@ function* extLoop(tr,delay){
     if(deliver){const bx=new Box();bx.dir='Export';bx.where='truck';bx.ref=tr;tr.cargo=bx;a.box=bx;}
     yield* until(()=>simT>spawnAt&&!trucks.some(o=>o.active&&o.body.some(q=>Math.abs(q.x-OFF)<2.6&&q.z>186)));spawnAt=simT+4;
     tr.v=0;tr.place(0,400,1);tr.active=true;tr.pop=0;stats.gateIn++;
-    tr.status='Arriving at gate';tr.dest='Gate in';yield* drive(tr,[{x:OFF,z:215},{x:OFF,z:GATE_Z+11}]);
+    tr.status='Arriving at gate';tr.dest='Gate in';yield* drive(tr,[{x:OFF,z:215},{x:OFF,z:GATE_IN}]);
     tr.status='Gate check';a.tIn=simT;yield* sleep(2.6);a.status='In terminal';ev('gate',`${tr.id} gated in · ${a.type.toLowerCase()}`,tr);
-    tr.status=deliver?'Delivering export':'Collecting import';tr.dest='Block '+slotName(st);
-    const B={x:st.x,z:st.blk.lane},vi=upV(B.x,-1),G={x:OFF,z:GATE_Z+11};
-    yield* drive(tr,vi===0?[G,{x:OFF,z:B.z},B]:[G,{x:OFF,z:108},{x:vx(vi,108,B.z),z:108},{x:vx(vi,108,B.z),z:B.z},B]);
+    const B={x:st.x,z:st.blk.lane},vi=upV(B.x,-1),G={x:OFF,z:GATE_IN};
+    yield* drive(tr,vi===0?[G,{x:OFF,z:B.z},B]:[G,{x:OFF,z:108},{x:vx(vi,108,B.z),z:108},{x:vx(vi,108,B.z),z:B.z},B],{gate:gates[0],onGo:()=>{tr.status=deliver?'Delivering export':'Collecting import';tr.dest='Block '+slotName(st);}});
     const q={truck:tr,stack:st,type:deliver?'store':'retrieve',box:deliver?null:a.box,free:false};st.blk.rtg.queue.push(q);tr.status='At '+st.blk.rtg.id;yield* until(()=>q.free);
     if(deliver)a.box.appt=null;
-    tr.status='To gate';tr.dest='Gate out';const A=P(tr),vo=nextV(A.x,-1),E={x:-OFF,z:GATE_Z-6};
+    tr.status='To gate';tr.dest='Gate out';const A=P(tr),vo=nextV(A.x,-1),E={x:-OFF,z:GATE_OUT};
     yield* drive(tr,vo===0?[A,{x:-OFF,z:A.z},E]:[A,{x:vo-OFF,z:A.z},{x:vo-OFF,z:108},{x:-OFF,z:108},E]);
     tr.status='Gate out';yield* sleep(1.6);tr.trips++;a.turn=(simT-a.tIn)*6/60;stats.turn.push(a.turn);if(stats.turn.length>6)stats.turn.shift();
     a.status='Completed';stats.gateDone++;ev('gate',`${tr.id} gated out · turn ${a.turn.toFixed(1)} min`,null);
-    tr.status='Leaving';yield* drive(tr,[E,{x:-OFF,z:215}]);
+    yield* openGate(gates[1],tr);tr.status='Leaving';yield* drive(tr,[E,{x:-OFF,z:215}]);
     if(tr.cargo){tr.cargo.free();tr.cargo=null;}
     tr.active=false;if(sel===tr)select(null);stats.gateIn--;yield* sleep(rr(3,12));
   }
@@ -836,11 +856,12 @@ function* foreman(p,x,dir){p.x=x;p.z=dir>0?26.5:97;
 (()=>{const hiv=0xe6d21a,hio=0xf07a1c;
   cranes.filter(c=>c.kind==='sts').forEach((c,i)=>cos.push(quayMan(makePed(i%2?hio:hiv),c,i%2?4.5:-4.5)));
   cos.push(gateMan(makePed(hio),true),gateMan(makePed(hiv),false),foreman(makePed(hiv),-11.2,1),foreman(makePed(hio),11.2,-1));})();
-const tug=(()=>{const B=new Builder();B.box(M_(0x26334f),10,2.8,4,0,-1.2,0);B.box(M_(0xf1efe9),3.6,2.3,2.8,-.6,1.3,0);B.box(M_(0x1f3640),3.7,.8,2.9,-.6,1.6,0);B.box(M_(0xc9481b),1.1,1.7,1.1,-2.6,2.6,0);B.cyl(M_(0x1d1b1e),.5,10.2,0,-.2,2.05,0,0,Math.PI/2,8);B.cyl(M_(0x1d1b1e),.5,10.2,0,-.2,-2.05,0,0,Math.PI/2,8);const g=B.build();scene.add(g);return g;})();
+
 
 function step(dt){
   simT+=dt;for(const c of cos)c.next(dt);
   for(const t of trucks)t.updatePose();
+  stepGates(dt);stepHarbour(dt);
   for(const c of cranes)if(c.kind==='sts'&&c.boom!==c.boomT){const d=c.boomT-c.boom,st=.2*dt;c.boom=Math.abs(d)<=st?c.boomT:c.boom+Math.sign(d)*st;}
   for(const t of trucks)if(t.active&&t.pop<1)t.pop=Math.min(1,t.pop+dt*2.5);
 }

@@ -1,10 +1,14 @@
 
 /* ---------- camera ---------- */
-const VIEWS={all:{tx:20,tz:40,dist:520},b1:{tx:-62,tz:4,dist:215},b2:{tx:62,tz:4,dist:215},yard:{tx:0,tz:66,dist:300},gate:{tx:8,tz:130,dist:175}};
+const VIEWS={all:{tx:20,tz:40,dist:520,az:.66,el:.63},b1:{tx:-62,tz:4,dist:215,el:.63},b2:{tx:62,tz:4,dist:215,el:.63},yard:{tx:0,tz:66,dist:300,el:.63},gate:{tx:8,tz:130,dist:175,el:.63},
+  bay:{tx:30,tz:60,dist:760,az:2.62,el:.085},west:{tx:10,tz:-30,dist:560,az:-1.2,el:.1},tugs:{tx:-150,tz:10,dist:250,az:2.2,el:.4}};
 const view={tx:20,tz:40,dist:520,az:.66,el:.63},cur=Object.assign({},view);let W=1,H=1,narrow=1,shiftT=0,shiftC=0;
-function applyCam(){const ce=Math.cos(cur.el),d=cur.dist*narrow;cam.position.set(cur.tx+d*Math.sin(cur.az)*ce,d*Math.sin(cur.el),cur.tz+d*Math.cos(cur.az)*ce);cam.lookAt(cur.tx,0,cur.tz);
+function applyCam(){const ce=Math.cos(cur.el),d=cur.dist*narrow,fv=18+15*sstep(.46,.07,cur.el);if(Math.abs(fv-cam.fov)>.02){cam.fov=fv;cam.updateProjectionMatrix();}   // the lens opens up as the view drops to the horizon, so the sky comes into frame
+  cam.position.set(cur.tx+d*Math.sin(cur.az)*ce,d*Math.sin(cur.el),cur.tz+d*Math.cos(cur.az)*ce);const gh=terrainH(cam.position.x,cam.position.z)+22;if(cam.position.y<gh)cam.position.y=gh;cam.lookAt(cur.tx,0,cur.tz);
   if(Math.abs(shiftC)>1)cam.setViewOffset(W,H,-shiftC,0,W,H);else if(cam.view)cam.clearViewOffset();
-  cam.updateMatrixWorld();scene.fog.near=d*.95;scene.fog.far=d*.95+Math.max(900,d*3);}
+  // haze: further when looking towards the horizon, closer in rain and fog
+  const reach=Math.min(Math.max(900,d*3)+5200*sstep(.55,.1,cur.el),wx.vis);
+  cam.updateMatrixWorld();scene.fog.near=d*.95*(1-.7*wx.mist)*(1-.3*sstep(.5,.14,cur.el));scene.fog.far=d*.95+reach;}
 function resize(){W=app.clientWidth||1;H=app.clientHeight||1;renderer.setSize(W,H,false);cam.aspect=W/H;narrow=clamp(1.5/cam.aspect,1,2.1);cam.updateProjectionMatrix();setShift();applyCam();}
 function setShift(){const w=$('#work');shiftT=(!w.hidden&&W>1100&&!app.classList.contains('x-all'))?w.offsetWidth/2:0;}
 const ray=new T.Raycaster(),ndc=new T.Vector2(),gp=new T.Plane(V(0,1,0),0);
@@ -14,7 +18,7 @@ function pickAt(cx,cy){const r=canvas.getBoundingClientRect();ndc.set((cx-r.left
   const hits=ray.intersectObjects(list,true);
   for(const h of hits){if(h.object===CIM){const b=boxAt[h.instanceId];if(b)return b;continue;}let o=h.object;while(o&&!o.userData.ent)o=o.parent;if(o)return o.userData.ent;}return null;}
 const ptrs=new Map();let grab=null,moved=0,pinch=null,follow=false;
-const DMIN=70,DMAX=860;
+const DMIN=70,DMAX=1500,ELMIN=.045,ELMAX=1.3;
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY,b:e.button,sh:e.shiftKey});moved=0;
   if(ptrs.size===1){grab=groundAt(e.clientX,e.clientY);canvas.classList.add('drag');}
   else if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),a:Math.atan2(b.y-a.y,b.x-a.x),dist:view.dist,az:view.az};grab=null;}});
@@ -22,15 +26,15 @@ canvas.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);
   if(!p){hoverAt=[e.clientX,e.clientY];return;}
   const dx=e.clientX-p.x,dy=e.clientY-p.y;moved+=Math.abs(dx)+Math.abs(dy);p.x=e.clientX;p.y=e.clientY;
   if(ptrs.size===2&&pinch){const [a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y),an=Math.atan2(b.y-a.y,b.x-a.x);view.dist=clamp(pinch.dist*pinch.d/d,DMIN,DMAX);view.az=pinch.az-(an-pinch.a);return;}
-  if(p.b===2||p.b===1||p.sh){view.az-=dx*.006;cur.az=view.az;applyCam();return;}
-  if(grab&&moved>4){follow=false;const g=groundAt(e.clientX,e.clientY);if(g){view.tx=clamp(view.tx+grab.x-g.x,-210,210);view.tz=clamp(view.tz+grab.z-g.z,-120,220);cur.tx=view.tx;cur.tz=view.tz;applyCam();}}});
+  if(p.b===2||p.b===1||p.sh){view.az-=dx*.006;cur.az=view.az;view.el=clamp(view.el+dy*.004,ELMIN,ELMAX);cur.el=view.el;applyCam();return;}
+  if(grab&&moved>4){follow=false;const g=groundAt(e.clientX,e.clientY);if(g){view.tx=clamp(view.tx+grab.x-g.x,-1300,2700);view.tz=clamp(view.tz+grab.z-g.z,-2400,700);cur.tx=view.tx;cur.tz=view.tz;applyCam();}}});
 const up=e=>{const p=ptrs.get(e.pointerId);ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size){canvas.classList.remove('drag');if(p&&moved<6&&e.type==='pointerup'&&p.b===0)select(pickAt(e.clientX,e.clientY),false);}};
 canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('pointerleave',()=>{hoverAt=null;hov=null;});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 canvas.addEventListener('wheel',e=>{e.preventDefault();view.dist=clamp(view.dist*Math.exp(e.deltaY*.0012),DMIN,DMAX);},{passive:false});
 $('.ctl').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const c=b.dataset.c;
-  if(c==='in')view.dist=clamp(view.dist*.75,DMIN,DMAX);else if(c==='out')view.dist=clamp(view.dist/.75,DMIN,DMAX);else if(c==='left')view.az+=Math.PI/6;else if(c==='right')view.az-=Math.PI/6;
-  else{follow=false;Object.assign(view,VIEWS.all,{az:.66});$('#view').value='all';}});
+  if(c==='in')view.dist=clamp(view.dist*.75,DMIN,DMAX);else if(c==='out')view.dist=clamp(view.dist/.75,DMIN,DMAX);else if(c==='left')view.az+=Math.PI/6;else if(c==='right')view.az-=Math.PI/6;else if(c==='up')view.el=clamp(view.el+.16,ELMIN,ELMAX);else if(c==='down')view.el=clamp(view.el-.16,ELMIN,ELMAX);
+  else{follow=false;Object.assign(view,VIEWS.all);$('#view').value='all';}});
 $('#view').addEventListener('change',e=>{follow=false;Object.assign(view,VIEWS[e.target.value]);});
 function flyTo(e){const f=e.frame();view.tx=f.x;view.tz=f.z;view.dist=e.kind==='vessel'?270:e.kind==='sts'?210:e.kind==='rtg'?175:125;}
 
@@ -45,26 +49,29 @@ function brackets(d){const [dx,dy,dz]=d,g=new T.Group(),B=new Builder(),L=clamp(
 function select(e,fly){sel=e&&!e.dead?e:null;if(brk){scene.remove(brk);brk.traverse(o=>{if(o.geometry)o.geometry.dispose();});brk=null;}
   if(sel){const f=sel.frame();brk=brackets(f.d);scene.add(brk);if(sel.kind==='vessel')tracked=sel;else if(sel.berth&&sel.berth.vessel)tracked=sel.berth.vessel;
     if(sel.kind==='box'&&sel.where==='yard')yardSel=sel.ref;
-    follow=!!fly&&(sel.kind==='truck'||sel.kind==='vessel');if(fly)flyTo(sel);}
+    follow=!!fly&&(sel.kind==='truck'||sel.kind==='vessel'||sel.kind==='tug');if(fly)flyTo(sel);}
   else follow=false;
   app.classList.toggle('has-sel',!!sel);uiTick(true);}
 const tagBox=$('#tags'),mkTag=c=>{const d=document.createElement('div');d.className='tag '+c;d.hidden=true;tagBox.appendChild(d);return d;};
 const tagSel=mkTag('sel'),tagHov=mkTag('hov'),tagV=[mkTag('ves'),mkTag('ves')],_v=V(0,0,0);
+const geoTags=GEO.map(g=>{const d=mkTag('geo');d.textContent=g.t;return d;});
+// place names fade in once the view is wide or low enough to show the surroundings
+function syncGeo(){const on=cur.dist>430||cur.el<.42;GEO.forEach((g,i)=>{const el=geoTags[i];_v.set(g.x,g.y,g.z).project(cam);if(!on||_v.z>1||Math.abs(_v.x)>1.05||Math.abs(_v.y)>1.05){el.hidden=true;return;}el.hidden=false;el.style.transform=`translate(${((_v.x*.5+.5)*W).toFixed(1)}px,${((-_v.y*.5+.5)*H).toFixed(1)}px) translate(-50%,-50%)`;});}
 function place(el,e,html){if(!e){el.hidden=true;return;}e.center(_v).project(cam);if(_v.z>1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){el.hidden=true;return;}
   el.hidden=false;if(el._h!==html){el._h=html;el.innerHTML=html;}el.style.transform=`translate(${((_v.x*.5+.5)*W).toFixed(1)}px,${((-_v.y*.5+.5)*H).toFixed(1)}px) translate(-50%,-100%)`;}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const statusOf=e=>e.kind==='box'?({yard:'In yard',ship:'On vessel',truck:'On truck',hook:'On hook'}[e.where]):e.status;
 
 /* ---------- HUD helpers ---------- */
-const IC={vessel:'<path d="M2.5 12.5l1.6 4h11.8l1.6-4M5 12.5V8h10v4.5M8 8V5h4v3M10 5V3"/>',sts:'<path d="M5 17V4l10 3M5 7h8M12 7v5M10.5 12h3v2h-3zM3 17h5"/>',rtg:'<path d="M4 17V5h12v12M4 8h12M10 8v4M8 12h4v2.5H8zM2.5 17h3M14.5 17h3"/>',
+const IC={vessel:'<path d="M2.5 12.5l1.6 4h11.8l1.6-4M5 12.5V8h10v4.5M8 8V5h4v3M10 5V3"/>',tug:'<path d="M2.5 12l1.4 4h11.6l2-4zM6 12V8.5h6V12M8 8.5V6h3v2.5M9.5 6V3.5M14 12V9.5h2"/>',sts:'<path d="M5 17V4l10 3M5 7h8M12 7v5M10.5 12h3v2h-3zM3 17h5"/>',rtg:'<path d="M4 17V5h12v12M4 8h12M10 8v4M8 12h4v2.5H8zM2.5 17h3M14.5 17h3"/>',
   truck:'<path d="M2 6h9v8H2zM11 9h4l3 3v2h-7"/><circle cx="5.5" cy="14.5" r="1.5"/><circle cx="14.5" cy="14.5" r="1.5"/>',box:'<path d="M2.5 6.5h15v8h-15zM6 6.5v8M9.5 6.5v8M13 6.5v8"/>',
   terminal:'<path d="M3 4h14v12H3zM3 8h14M3 12h14M8 4v12M12.5 4v12"/>',locate:'<circle cx="10" cy="10" r="3"/><path d="M10 2.5v3M10 14.5v3M2.5 10h3M14.5 10h3"/>',close:'<path d="M5 5l10 10M15 5L5 15"/>',
   follow:'<path d="M4 16L16 4M16 4H9M16 4v7"/>',anchor:'<circle cx="10" cy="5" r="1.8"/><path d="M10 7v10M5 12a5 5 0 0010 0M7 9.5h6"/>',check:'<path d="M5 10.5l3.2 3.2L15 7"/>',flag:'<path d="M5 17V4h9l-2 3.5 2 3.5H5"/>'};
 const svg=(k,c='i')=>`<svg class="${c}" viewBox="0 0 20 20">${IC[k]}</svg>`;
 const TONE={Discharging:'good',Loading:'good',Hoisting:'good',Lowering:'good',Stacking:'good','Loading truck':'good','Trolley out':'good','Trolley in':'good','Trolley travel':'good','Gantry travel':'sea',Rehandling:'warn',
-  'Waiting for truck':'warn','Gate check':'warn','Gate out':'warn',Mooring:'warn',Berthing:'sea',Arriving:'sea',Departing:'sea',Completed:'idle',Idle:'idle',Standby:'idle','Boom up':'idle','Lowering boom':'sea',
+  'Waiting for truck':'warn','Gate check':'warn','Gate out':'warn',Mooring:'warn',Berthing:'sea',Arriving:'sea',Departing:'sea',Inbound:'sea','Tugs made fast':'sea',Swinging:'sea',Unberthing:'sea','Awaiting tugs':'warn','Standing by':'idle','Standing off':'idle',Completed:'idle',Idle:'idle',Standby:'idle','Boom up':'idle','Lowering boom':'sea',
   'In yard':'idle','On vessel':'sea','On truck':'good','On hook':'accent',Operational:'good',Cleared:'good',Pending:'warn',Inspection:'vio',Hold:'bad',Booked:'sea','At gate':'warn','In terminal':'good',Cancelled:'bad',Expected:'idle'};
-const tone=s=>TONE[s]||(/patrol|Checking|Standing/.test(s)?'sea':/^Under|^At RTG/.test(s)?'warn':/^To |Arriving|Leaving|Delivering|Collecting|Repositioning/.test(s)?'sea':'idle');
+const tone=s=>TONE[s]||(/^Towing|^Pushing|^Pulling|^Alongside|^Escorting/.test(s)?'good':/patrol|Checking|Standing|^Proceeding|^Returning|^Waiting for MV/.test(s)?'sea':/^Under|^At RTG/.test(s)?'warn':/^To |Arriving|Leaving|Delivering|Collecting|Repositioning/.test(s)?'sea':'idle');
 const pill=s=>`<span class="pill ${tone(s)}">${esc(s)}</span>`;
 const kv=rows=>'<dl class="kv">'+rows.map(([k,v,m])=>`<div><dt>${k}</dt><dd${m?' class="mono"':''}>${v}</dd></div>`).join('')+'</dl>';
 const head=(icon,eyebrow,title,sub,mono)=>`<div class="ihead"><div class="iicon">${svg(icon)}</div><div class="ititle"><small>${esc(eyebrow)}</small><b${mono?' class="mono"':''}>${esc(title)}</b><span>${esc(sub)}</span></div><div class="iact"><button data-a="locate" aria-label="Centre on this">${svg('locate')}</button><button data-a="follow" class="${follow?'on':''}" aria-label="Follow" aria-pressed="${follow}">${svg('follow')}</button><button data-a="close" aria-label="Close">${svg('close')}</button></div></div>`;
@@ -96,7 +103,15 @@ function applyPanels(){for(const [k] of PANELS)app.classList.toggle('x-'+k,HID.h
   $('#pmenu').innerHTML=PANELS.map(([k,l])=>`<button role="menuitemcheckbox" aria-checked="${!HID.has(k)}" data-pt="${k}">${ck}${l}</button>`).join('')+`<hr><button role="menuitemcheckbox" aria-checked="${all}" data-pt="all">${ck}Hide everything<kbd>H</kbd></button>`;
   setShift();}
 function setPanel(k,show){if(show)HID.delete(k);else HID.add(k);if(k!=='all'&&show)HID.delete('all');applyPanels();}
-$('#pbtn').addEventListener('click',()=>{const m=$('#pmenu');m.hidden=!m.hidden;$('#feed').hidden=true;});
+$('#pbtn').addEventListener('click',()=>{const m=$('#pmenu');m.hidden=!m.hidden;$('#feed').hidden=true;$('#skymenu').hidden=true;});
+$('#skybtn').addEventListener('click',()=>{const m=$('#skymenu');m.hidden=!m.hidden;$('#feed').hidden=true;$('#pmenu').hidden=true;skyUI();});
+$('#skymenu').addEventListener('click',e=>{if(e.target.closest('#skyhold')){setHold(sky.hold===null);skyUI();return;}const b=e.target.closest('[data-v]');if(!b)return;if(b.parentNode.dataset.k==='tod')setTimeOfDay(b.dataset.v);else setWeather(b.dataset.v);skyTick(0);uiTick(true);});
+const SHIFTS=[[6,'Shift A · 06:00–14:00'],[14,'Shift B · 14:00–22:00'],[22,'Shift C · 22:00–06:00']];
+function skyUI(){const hd=sky.hold!==null,hb=$('#skyhold');if(hb.getAttribute('aria-checked')!==String(hd)){hb.setAttribute('aria-checked',hd);hb.lastChild.textContent=hd?'On':'Off';}
+  const h=skyHour(),p=periodOf(h),t=p+' · '+WXN[wx.name]+(hd?' · held':'');if($('#skylbl').textContent!==t)$('#skylbl').textContent=t;
+  const tod=h>=5.2&&h<11?'morning':h<13.5&&h>=11?'noon':h>=13.5&&h<17.6?'afternoon':'night';
+  for(const b of $('#skymenu').querySelectorAll('[data-v]'))b.classList.toggle('on',b.dataset.v===(b.parentNode.dataset.k==='tod'?tod:wx.name));
+  const hc=hourNow(),sh=hc>=6&&hc<14?SHIFTS[0][1]:hc>=14&&hc<22?SHIFTS[1][1]:SHIFTS[2][1];if($('#shift').textContent!==sh)$('#shift').textContent=sh;}
 $('#pmenu').addEventListener('click',e=>{const b=e.target.closest('[data-pt]');if(!b)return;const k=b.dataset.pt;if(k==='all')setPanel('all',HID.has('all'));else setPanel(k,HID.has(k));});
 app.addEventListener('click',e=>{const mn=e.target.closest('[data-min]'),op=e.target.closest('[data-open]');if(mn)return setPanel(mn.dataset.min,false);if(op)return setPanel(op.dataset.open,true);
   const g=e.target.closest('[data-go]');if(g&&g.dataset.go){go(g.dataset.go);}});
@@ -105,12 +120,14 @@ app.addEventListener('click',e=>{const mn=e.target.closest('[data-min]'),op=e.ta
 function yardFigures(){let n=0,reef=0,hold=0,dg=0,dw=0;for(const b of blocks)for(const s of b.stacks)for(const x of s.items){n++;if(x.reefer)reef++;if(x.customs==='Hold'||x.customs==='Inspection')hold++;if(x.dg)dg++;dw+=dwellH(x);}return {n,reef,hold,dg,dw:n?dw/n:0};}
 function card(e){
   if(!e){const occ=yard.count(),q=cranes.filter(c=>c.kind==='sts'),r=cranes.filter(c=>c.kind==='rtg');
-    return `<div class="ihead"><div class="iicon">${svg('terminal')}</div><div class="ititle"><small>Terminal · VCT</small><b>Vàm Chiều Terminal</b><span>2 berths · 4 quay cranes · 6 yard gantries</span></div><div class="iact"><button  data-min="insp" aria-label="Hide terminal overview"><svg class="i" viewBox="0 0 20 20"><path d="M5 10h10"/></svg></button></div></div><div class="istat">${pill('Operational')}<span>${berths.filter(b=>b.vessel).length} of 2 berths occupied</span></div>`+
-    kv([['Yard stock',`${(occ*2).toLocaleString()} / ${(yard.cap*2).toLocaleString()} TEU`],['Quay cranes working',`${q.filter(c=>!c.idle).length} / ${q.length}`],['Yard gantries working',`${r.filter(c=>!c.idle).length} / ${r.length}`],['Trucks on site',trucks.filter(t=>t.active).length],['Wind','WSW 9 kn'],['Tide','+1.8 m, rising'],['Sunset','17:52']])+
-    '<div class="blocks">'+blocks.map(b=>{let n=0;for(const s of b.stacks)n+=s.items.length;const p=Math.round(n/b.cap*100);return `<div><s><i style="height:${p}%"></i></s><b>${b.name}</b>${p}%</div>`;}).join('')+'</div><p class="note">Click a vessel, crane, truck or container to inspect it. Drag to pan, scroll to zoom, shift-drag to rotate.</p>';}
+    return `<div class="ihead"><div class="iicon">${svg('terminal')}</div><div class="ititle"><small>Terminal · VCT</small><b>Vàm Chiều Terminal</b><span>2 berths · 4 quay cranes · 6 yard gantries · 2 tugs</span></div><div class="iact"><button  data-min="insp" aria-label="Hide terminal overview"><svg class="i" viewBox="0 0 20 20"><path d="M5 10h10"/></svg></button></div></div><div class="istat">${pill('Operational')}<span>${berths.filter(b=>b.vessel).length} of 2 berths occupied</span></div>`+
+    kv([['Yard stock',`${(occ*2).toLocaleString()} / ${(yard.cap*2).toLocaleString()} TEU`],['Quay cranes working',`${q.filter(c=>!c.idle).length} / ${q.length}`],['Yard gantries working',`${r.filter(c=>!c.idle).length} / ${r.length}`],['Trucks on site',trucks.filter(t=>t.active).length],['Weather',WXN[wx.name]+' · '+({clear:'visibility 10 km',cloudy:'visibility 8 km',rain:'visibility 2 km',fog:'visibility 400 m'})[wx.name]],['Wind',({clear:'W 9 kn',cloudy:'NW 13 kn',rain:'NE 18 kn',fog:'calm'})[wx.name]],['Tide','+1.8 m, rising'],['Sunrise · sunset','05:40 · 17:30']])+
+    '<div class="blocks">'+blocks.map(b=>{let n=0;for(const s of b.stacks)n+=s.items.length;const p=Math.round(n/b.cap*100);return `<div><s><i style="height:${p}%"></i></s><b>${b.name}</b>${p}%</div>`;}).join('')+'</div><p class="note">Click a vessel, tug, crane, truck or container to inspect it. Drag to pan, scroll to zoom, shift-drag to rotate and tilt.</p><p class="note">Site and surroundings laid out after Sơn Trà Port, Đà Nẵng. Map data © OpenStreetMap contributors. Operations and names are fictional.</p>';}
   if(e.kind==='vessel'){const b=e.berth;return head('vessel','Vessel · '+b.name,e.name,`${e.imo} · voy. ${e.voy} · ${e.line.n}`)+`<div class="istat">${pill(e.status)}<span>${e.mode==='discharge'?'Import discharge':'Export loading'}</span></div>`+prog(e.done,e.planned)+
-    kv([['Line',esc(e.line.n)],['Length overall','172 m'],['Berth',b.name+' · port side to'],['Quay cranes',b.cranes.map(c=>link(c)).join(' · ')],['Arrived',clockAt(e.tArr),1],['Est. departure',clockAt(etdOf(e)),1],['Last move',e.last?link(e.last.box):'—',1]])+
+    kv([['Line',esc(e.line.n)],['Length overall','172 m'],['Berth',b.name+' · starboard side to, bow out'],['Tugs',tugs.filter(t=>t.assist===e).map(t=>link(t)).join(' · ')||'—'],['Quay cranes',b.cranes.map(c=>link(c)).join(' · ')],['Arrived',clockAt(e.tArr),1],['Est. departure',clockAt(etdOf(e)),1],['Last move',e.last?link(e.last.box):'—',1]])+
     `<div class="acts"><button class="btn" data-mod="vessels">Open bay plan</button></div>`;}
+  if(e.kind==='tug')return head('tug','Harbour tug · Tideline Towage',e.name,'ASD tug · 27 m · 45 t bollard pull')+`<div class="istat">${pill(e.status)}<span>${e.fast?'Line made fast':e.push?'Pushing':'No line out'}</span></div>`+
+    kv([['Assisting',e.assist&&!e.assist.dead?link(e.assist):'—'],['Speed',(e.spd*1.944/3).toFixed(1)+' kn',1],['Heading',Math.round((Math.atan2(-(.984*Math.cos(e.h)+.177*Math.sin(e.h)),.177*Math.cos(e.h)-.984*Math.sin(e.h))*180/Math.PI+360)%360)+'°',1],['Ship moves this session',e.jobs,1],['Berth','Tug pontoon, east cove']]);
   if(e.kind==='sts'){const v=e.berth.vessel;return head('sts','Quay crane · '+e.berth.name,e.id,'Ship-to-shore gantry · 16 rows outreach')+`<div class="istat">${pill(e.status)}<span>${e.cargo?'Laden':'Empty spreader'}</span></div>`+
     kv([['Vessel',link(v)],['Working bay',v?'Bay '+v.cols[Math.min(e.col,e.range[1])].bay:'—',1],['On hook',e.cargo?link(e.cargo):'—',1],['Truck in lane',e.atStop?link(e.atStop):'—',1],['Boom',e.boom<.02?'Down':e.boom>1.2?'Raised':'Moving'],['Hoist height',e.h.toFixed(1)+' m',1],['Moves this session',e.moves,1]]);}
   if(e.kind==='rtg'){let n=0;for(const s of e.blk.stacks)n+=s.items.length;const q=e.queue[0];return head('rtg','Yard gantry · Block '+e.blk.name,e.id,'Rubber-tyred gantry · 5 wide, 1 over 4')+`<div class="istat">${pill(e.status)}<span>${e.queue.length} job${e.queue.length===1?'':'s'} queued</span></div>`+prog(n,e.blk.cap,'accent')+
@@ -153,6 +170,7 @@ function trackerHTML(){
 function rowsHTML(){
   const row=(e,sub,mid,st,right)=>`<button class="row ${sel===e?'on':''}" data-go="${key(e)}"><div><b>${esc(e.label.replace('MV ',''))}</b><small>${esc(sub)}</small></div><span>${mid}</span>${pill(st)}<em>${right}</em></button>`;
   if(tab==='berths')return berths.map(b=>b.vessel?row(b.vessel,b.name,esc(b.vessel.line.n),b.vessel.status,b.vessel.done+'/'+b.vessel.planned):`<div class="row"><div><b>${b.id}</b><small>${b.name}</small></div><span>Next: ${esc(b.next.name)} · ETA ${clockAt(b.nextAt)}</span>${pill('Idle')}<em></em></div>`).join('')+
+    tugs.map(t=>row(t,'Harbour tug',t.assist&&!t.assist.dead?esc(t.assist.name):'Tug pontoon',t.status,(t.spd*1.944/3).toFixed(1)+' kn')).join('')+
     `<div class="row"><div><b>Gate</b><small>2 lanes</small></div><span>${stats.gateIn} external truck${stats.gateIn===1?'':'s'} on site</span>${pill('Operational')}<em></em></div>`;
   if(tab==='cranes')return cranes.map(c=>row(c,c.kind==='sts'?c.berth.name:'Block '+c.blk.name,c.cargo?`<span class="mono">${c.cargo.id}</span>`:c.kind==='rtg'&&c.queue.length?c.queue.length+' queued':'—',c.status,c.moves)).join('');
   if(tab==='trucks')return trucks.filter(t=>t.active).map(t=>row(t,t.sub==='tt'?t.berth.name:t.sub==='car'?'Service':'Haulier',esc(t.dest),t.status,Math.round(t.v*3.6)+' km/h')).join('');
@@ -238,7 +256,7 @@ function vesselsHTML(){
   for(const b of berths){const v=b.vessel;let bars='';
     if(v){const a=pos(v.tArr),e=etdOf(v),w=Math.max(1,pos(e)-a);bars+=`<button class="sc-bar" data-go="${key(v)}" style="left:${a.toFixed(2)}%;width:${w.toFixed(2)}%"><u style="width:${Math.round(v.done/v.planned*100)}%"></u><span>${esc(v.name)} · ${v.mode==='discharge'?'discharge':'load'} ${v.done}/${v.planned}</span></button>`;
       calls.push([v,null,b,v.tArr,e]);}
-    const n=b.next,ns=v?etdOf(v)+95:b.nextAt,ne=ns+60+n.planned*13.5;if(pos(ns)<99)bars+=`<div class="sc-bar next" style="left:${pos(ns).toFixed(2)}%;width:${Math.max(1,pos(ne)-pos(ns)).toFixed(2)}%"><span>${esc(n.name)} · ${n.mode==='discharge'?'discharge':'load'} ${n.planned}</span></div>`;
+    const n=b.next,ns=v?etdOf(v)+80+ARRIVE_S:b.nextAt,ne=ns+60+n.planned*13.5;if(pos(ns)<99)bars+=`<div class="sc-bar next" style="left:${pos(ns).toFixed(2)}%;width:${Math.max(1,pos(ne)-pos(ns)).toFixed(2)}%"><span>${esc(n.name)} · ${n.mode==='discharge'?'discharge':'load'} ${n.planned}</span></div>`;
     calls.push([null,n,b,ns,ne]);
     h+=`<div class="sc-row"><b>${b.id}</b><div class="sc-lane">${grid}${bars}</div></div>`;}
   h+=`</div><div class="tbl simple" style="flex:none;min-height:0"><div class="tin" style="--cols:1.4fr 1.2fr .6fr .9fr .6fr .6fr .7fr .9fr;min-width:700px"><div class="thead">${['Vessel','Line','Berth','Operation','ATA / ETA','ETD','Moves','Status'].map((x,i)=>`<button class="${i===6?'num':''}" tabindex="-1">${x}</button>`).join('')}</div>`;
@@ -267,7 +285,7 @@ function gateHTML(){
 let lastUI=0,occ0=null,modT=0;
 function uiTick(force){
   const now=performance.now();if(!force&&now-lastUI<300)return;lastUI=now;
-  $('#clock').textContent=clockAt(simT);
+  $('#clock').textContent=clockAt(simT);skyUI();
   if(sel&&(sel.dead||sel.active===false))return select(null);
   inspEl.classList.toggle('home',!sel);setH(inspEl,card(sel));
   const bn=$('#bellN');bn.hidden=!unread;bn.textContent=unread>9?'9+':unread;
@@ -297,16 +315,16 @@ qEl.addEventListener('input',search);qEl.addEventListener('focus',search);
 qEl.addEventListener('keydown',e=>{if(e.key==='Escape'){qEl.blur();resEl.hidden=true;}if(e.key==='Enter'&&resEl._list&&resEl._list[0]){select(resEl._list[0],true);resEl.hidden=true;qEl.blur();}});
 resEl.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-i]');if(b){e.preventDefault();select(resEl._list[+b.dataset.i],true);resEl.hidden=true;qEl.blur();}});
 qEl.addEventListener('blur',()=>setTimeout(()=>{resEl.hidden=true;},120));
-$('#bell').addEventListener('click',()=>{const f=$('#feed');f.hidden=!f.hidden;$('#pmenu').hidden=true;unread=0;uiTick(true);});
-document.addEventListener('pointerdown',e=>{if(!e.target.closest('.bell')){$('#feed').hidden=true;$('#pmenu').hidden=true;}});
+$('#bell').addEventListener('click',()=>{const f=$('#feed');f.hidden=!f.hidden;$('#pmenu').hidden=true;$('#skymenu').hidden=true;unread=0;uiTick(true);});
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('.bell')){$('#feed').hidden=true;$('#pmenu').hidden=true;$('#skymenu').hidden=true;}});
 $('#colorby').addEventListener('change',e=>{colorBy=e.target.value;repaintAll();modT=0;uiTick(true);});
 addEventListener('keydown',e=>{const tg=e.target.tagName;if(e.key==='/'&&tg!=='INPUT'){e.preventDefault();qEl.focus();}else if((e.key==='h'||e.key==='H')&&tg!=='INPUT'&&tg!=='SELECT'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const hide=!HID.has('all');setPanel('all',!hide);if(hide)toast('Panels hidden. Press H or use the panels button to bring them back.');}
   else if(e.key==='Escape'&&tg!=='INPUT'){if(HID.has('all'))setPanel('all',true);else if(sel)select(null);else if(mode!=='live')setMode('live');}});
 let speed=1;document.querySelector('.speed').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;speed=+b.dataset.sp;[...b.parentNode.children].forEach(x=>x.classList.toggle('on',x===b));$('#live').classList.toggle('paused',!speed);$('#live span').textContent=speed?'Live':'Paused';});
 
 /* ---------- frame loop ---------- */
-const lr=new T.Vector3().crossVectors(V(0,1,0),SUN).normalize(),lu=new T.Vector3().crossVectors(SUN,lr).normalize(),_c=V(0,0,0);let sunS=0;
-function shadowFit(){const d=cur.dist*narrow,S=d<150?95:d<260?150:d<430?215:300;if(S!==sunS){sunS=S;const c=sun.shadow.camera;c.left=-S;c.right=S;c.top=S;c.bottom=-S;c.updateProjectionMatrix();}
+const lr=new T.Vector3(),lu=new T.Vector3(),_c=V(0,0,0),UP=V(0,1,0);let sunS=0;
+function shadowFit(){lr.crossVectors(UP,SUN).normalize();lu.crossVectors(SUN,lr).normalize();const d=cur.dist*narrow,S=d<150?95:d<260?150:d<430?215:300;if(S!==sunS){sunS=S;const c=sun.shadow.camera;c.left=-S;c.right=S;c.top=S;c.bottom=-S;c.updateProjectionMatrix();}
   const tx=2*S/SM;_c.set(cur.tx,0,cur.tz);const a=_c.dot(lr),b=_c.dot(lu);_c.addScaledVector(lr,Math.round(a/tx)*tx-a).addScaledVector(lu,Math.round(b/tx)*tx-b);
   sun.target.position.copy(_c);sun.position.copy(_c).addScaledVector(SUN,560);}
 let last=performance.now(),hovT=0,dwT=0,fN=0,fT=0;
@@ -318,7 +336,7 @@ function frame(now){
   for(const c of cranes){c.sync();if(c.kind==='sts')syncBoom(c);}
   for(const t of trucks)t.sync();
   for(const p of peds)p.sync(rdt);
-  tug.position.set(Math.sin(simT*.018)*260,0,-92+Math.sin(simT*.05)*6);tug.rotation.y=Math.cos(simT*.018)>0?0:Math.PI;
+  syncHarbour();
   if(colorBy==='dwell'&&now-dwT>20000){dwT=now;repaintAll();}
   if(dirtyC){CIM.instanceMatrix.needsUpdate=true;dirtyC=false;}
   if(sel&&follow){const f=sel.frame();view.tx=f.x;view.tz=f.z;}
@@ -328,8 +346,9 @@ function frame(now){
   place(tagSel,sel,sel?`${esc(sel.label)}<span>${esc(statusOf(sel))}</span>`:'');
   place(tagHov,hov&&hov!==sel&&hov.kind!=='vessel'?hov:null,hov?esc(hov.label):'');
   berths.forEach((b,i)=>place(tagV[i],b.vessel&&b.vessel!==sel?b.vessel:null,b.vessel?`${esc(b.vessel.name)}<span>${esc(b.vessel.status)}${b.vessel.phase==='work'?' '+b.vessel.done+'/'+b.vessel.planned:''}</span>`:''));
+  skyTick(rdt);syncGeo();
   uiTick(false);renderer.render(scene,cam);
 }
-new ResizeObserver(resize).observe(app);resize();applyPanels();
+new ResizeObserver(resize).observe(app);resize();applyPanels();initNight();
 for(let i=0;i<1500;i++)step(.05);
 uiTick(true);requestAnimationFrame(frame);

@@ -6,7 +6,9 @@ const fs = require('fs'), path = require('path'), { execFileSync } = require('ch
 const root = __dirname, read = f => fs.readFileSync(path.join(root, f), 'utf8'), write = (f, s) => fs.writeFileSync(path.join(root, f), s);
 
 const shell = read('src/shell.html');                       // <title>, fonts, CSS, HUD markup
-const js = "(()=>{'use strict';\n" + read('src/world.js')    // scene, models, simulation
+const js = "(()=>{'use strict';\n" + read('src/world.js')    // scene, terminal models, simulation
+         + read('src/sky.js')                                // time of day, weather, night lighting
+         + read('src/harbour.js')                            // Sơn Trà geography, surroundings, tugs and ship handling
          + read('src/ui.js') + "})();\n";                    // camera, selection, HUD, modules, frame loop
 
 // syntax check before writing anything

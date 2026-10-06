@@ -32,7 +32,7 @@ button{cursor:pointer}
 #app{position:relative;height:100%;min-height:460px;overflow:hidden;-webkit-user-select:none;user-select:none}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;filter:contrast(1.05) saturate(1.06)}
 #gl.drag{cursor:grabbing}#gl.hot{cursor:pointer}
-.glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(110% 80% at 0% 0%,rgba(255,186,104,.26),transparent 58%);mix-blend-mode:screen}
+.glow{position:absolute;inset:0;pointer-events:none;transition:opacity .6s;background:radial-gradient(110% 80% at 0% 0%,rgba(255,186,104,.26),transparent 58%);mix-blend-mode:screen}
 #tags{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .tag{position:absolute;left:0;top:0;white-space:nowrap;font:700 11px/1 var(--f-mono);padding:5px 7px;border-radius:5px;will-change:transform}
 .tag span{font:500 11px/1 var(--f-body);margin-left:6px;opacity:.88}
@@ -308,14 +308,26 @@ button.row:hover{background:var(--sunken)}
 #app.x-all .kpis,#app.x-all .right,#app.x-all .tracker,#app.x-all .lists,#app.x-all .legend,#app.x-all .work,#app.x-all .chip{display:none!important}
 .bell>button.on{background:var(--accent);border-color:transparent;color:#fff}
 .pmenu{right:0;width:236px}
+.bell.sky>button{width:auto;padding:0 10px 0 8px;display:flex;align-items:center;gap:7px;font-weight:600;color:var(--ink);white-space:nowrap}
+.bell.sky>button svg{color:var(--accent)}
+.skymenu{right:0;width:318px;padding:10px;gap:7px}
+.skymenu .note{margin:2px 0 0}
+.skymenu #skyhold{border:1px solid var(--line);font-weight:600}
+.skymenu #skyhold[aria-checked="true"]{border-color:var(--accent);color:var(--accent)}.skymenu #skyhold[aria-checked="true"] small{color:var(--accent)}
+.seg{display:flex;padding:2px;border-radius:7px;background:var(--sunken);border:1px solid var(--line-2)}
+.pop .seg button{flex:1;justify-content:center;padding:6px 4px;font-weight:600;color:var(--ink-2);border-radius:5px}
+.pop .seg button.on{background:#fff;color:var(--accent);box-shadow:0 1px 2px rgba(50,24,14,.25)}
+.tag.geo{padding:0;font:700 10.5px/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.94);text-shadow:0 1px 2px rgba(20,16,24,.85),0 0 10px rgba(20,16,24,.55);pointer-events:none}
+#app.x-all .tag.geo{display:none}
 .pmenu button svg{width:15px;height:15px;color:var(--accent)}
 .pmenu button[aria-checked="false"] svg{visibility:hidden}
 .pmenu hr{border:0;border-top:1px solid var(--line-2);margin:3px 0;width:100%}
 .pmenu kbd{margin-left:auto;font:500 10.5px var(--f-mono);border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--ink-3)}
 
-@media (max-width:1380px){.shift{display:none}}
+@media (max-width:1560px){.shift{display:none}}
 @media (max-width:1240px){.search kbd,.crumb span{display:none}.kpi{min-width:0}.kpi:nth-child(4){display:none}}
 @media (max-width:1100px){.now-card{display:none}.kpi em{display:none}.search{display:none}.work{width:calc(100% - var(--railw) - 24px)}.right{z-index:7}#app:not(.m-live) .ctl{display:none}}
+@media (max-width:1180px){#skylbl{display:none}.bell.sky>button{padding:0 8px}}
 @media (max-width:940px){.tracker,.c-tracker{display:none!important}.pick span{display:none}.pick{padding-left:2px}}
 @media (max-width:760px){
   :root{--railw:0px}
@@ -375,16 +387,25 @@ button.row:hover{background:var(--sunken)}
     </label>
     <label class="pick"><span>View</span>
       <select id="view" aria-label="Camera view">
-        <option value="all">Whole terminal</option><option value="b1">Berth 1</option><option value="b2">Berth 2</option><option value="yard">Container yard</option><option value="gate">Gate</option>
+        <option value="all">Whole terminal</option><option value="b1">Berth 1</option><option value="b2">Berth 2</option><option value="yard">Container yard</option><option value="gate">Gate</option><option value="tugs">Tug berth</option><option value="bay">From the bay</option><option value="west">Along the quay, west</option>
       </select>
     </label>
+    <div class="bell sky"><button id="skybtn" aria-label="Time of day and weather" aria-haspopup="true"><svg class="i" viewBox="0 0 20 20"><circle cx="7.5" cy="8" r="3"/><path d="M7.5 2.5v1.2M2 8h1.2M3.6 4.1l.9.9M11.4 4.1l-.9.9M8 15.5h7a2.6 2.6 0 000-5.2 3.6 3.6 0 00-6.6 1A2.2 2.2 0 008 15.5z"/></svg><span id="skylbl">Afternoon · Clear</span></button>
+      <div id="skymenu" class="pop skymenu panel" hidden>
+        <span class="cap">Time of day</span>
+        <div class="seg" data-k="tod"><button data-v="morning">Morning</button><button data-v="noon">Noon</button><button data-v="afternoon">Afternoon</button><button data-v="night">Night</button></div>
+        <span class="cap">Weather</span>
+        <div class="seg" data-k="wx"><button data-v="clear">Clear</button><button data-v="cloudy">Cloudy</button><button data-v="rain">Rain</button><button data-v="fog">Fog</button></div>
+        <button id="skyhold" role="switch" aria-checked="false">Hold the sky at this hour<small>Off</small></button>
+        <p class="note">The sky follows the terminal clock: one hour passes every ten minutes at 1×. Hold it to keep the light as it is.</p>
+      </div></div>
     <div class="live" id="live"><i></i><span>Live</span><b id="clock">16:42</b></div>
     <div class="speed" role="group" aria-label="Simulation speed">
       <button data-sp="0" aria-label="Pause">❚❚</button><button data-sp="1" class="on">1×</button><button data-sp="2">2×</button><button data-sp="4">4×</button>
     </div>
     <div class="bell"><button id="bell" aria-label="Activity"><svg class="i" viewBox="0 0 20 20"><path d="M5.5 14V9a4.5 4.5 0 019 0v5l1.5 1.5H4zM8.5 16.5a1.5 1.5 0 003 0"/></svg></button><u id="bellN" hidden>0</u><div id="feed" class="pop feed panel" hidden></div></div>
     <div class="bell"><button id="pbtn" aria-label="Show or hide panels" aria-haspopup="true"><svg class="i" viewBox="0 0 20 20"><path d="M3 4h14v12H3zM3 8h14M8 8v8"/></svg></button><div id="pmenu" class="pop pmenu panel" role="menu" hidden></div></div>
-    <div class="shift"><b>Shift B · 14:00–22:00</b><span>Demo · simulated data</span></div>
+    <div class="shift"><b id="shift">Shift B · 14:00–22:00</b><span>Demo · simulated data</span></div>
   </header>
 
   <section class="kpis" aria-label="Key figures">
@@ -402,6 +423,8 @@ button.row:hover{background:var(--sunken)}
       <hr>
       <button data-c="left" aria-label="Rotate left"><svg class="i" viewBox="0 0 20 20"><path d="M4 9a6 6 0 116 7M4 4v5h5"/></svg></button>
       <button data-c="right" aria-label="Rotate right"><svg class="i" viewBox="0 0 20 20"><path d="M16 9a6 6 0 10-6 7M16 4v5h-5"/></svg></button>
+      <button data-c="down" aria-label="Tilt towards the horizon"><svg class="i" viewBox="0 0 20 20"><path d="M3 14h14M6 10.5l4-4 4 4"/></svg></button>
+      <button data-c="up" aria-label="Tilt towards a top view"><svg class="i" viewBox="0 0 20 20"><path d="M3 6h14M6 9.5l4 4 4-4"/></svg></button>
       <hr>
       <button data-c="home" aria-label="Reset view"><svg class="i" viewBox="0 0 20 20"><path d="M3.5 9.5L10 4l6.5 5.5M5.5 8.5V16h9V8.5"/></svg></button>
     </div>
