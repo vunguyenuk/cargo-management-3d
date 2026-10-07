@@ -1,0 +1,40 @@
+@ -760 -400 .6
+# ---- Sông Thu shipyard waterfront: transfer yard with rails, hulls on the hard, goliath cranes, halls, the Thọ Quang boats ----
+S 455 325 712 265 185 22 white white       # main assembly hall (same as e5)
+S 510 518 762 458 165 20 white white
+S 570 690 800 640 185 18 stripe grey
+S 610 800 800 765 60 12 lgreen white
+S 383 961 540 925 105 14 white white
+F 332 540 365 540 40 5 rust rust
+F 460 562 482 562 22 4 dark dark
+S 272 630 305 630 30 5 white white
+S 392 160 455 150 28 6 lgrey white
+S 572 105 590 172 30 12 white white
+S 612 105 628 162 28 9 rust cream
+S 648 100 665 158 30 9 rust cream
+Y 395 855 458 840 30 3
+Y 205 40 300 20 35 3
+Y 215 90 315 70 50 3
+Y 235 140 320 120 40 3
+G sand 200 180 430 230 480 440 540 600 560 870 360 900 300 860 245 600 200 560 190 300
+C 400 710 blocks 80
+R 460 605 540 685 goliath
+R 520 800 590 860 goliath
+P 60 0 625 250 585 slip
+C 85 400 shiplift 0
+V 68 458 195 438 40 fdock rust
+V 178 370 235 360 12 patrol grey
+V 110 668 180 665 28 barge rust
+V 240 632 252 720 26 barge rust
+V 262 745 285 830 26 barge rust
+V 345 332 420 318 20 hull grey
+V 298 452 340 445 14 hull grey
+V 282 492 335 485 14 hull grey
+V 285 522 355 512 16 hull grey
+V 100 990 215 968 22 trawler grey
+V 215 1018 340 1000 28 trawler grey
+V 120 1045 215 1035 24 trawler green
+G houses 560 890 800 860 800 1000 430 1060 420 1020 560 990
+N 255 230 14
+N 262 395 14
+N 425 180 12

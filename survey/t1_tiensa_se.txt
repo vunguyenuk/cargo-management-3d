@@ -1,0 +1,12 @@
+@ 2180 250 .6
+# ---- Tiên Sa, south-east container berth: two ship-to-shore cranes, stacks parallel to the quay ----
+K 185 395 130 435 sts
+K 300 520 245 555 sts
+Y 285 372 340 450 44 4
+Y 372 488 432 560 44 4
+C 495 640 pile 30
+V 508 825 540 845 18 barge grey
+S 590 568 665 540 30 7 rust cream
+S 600 675 628 735 26 6 orange cream
+S 630 755 652 820 22 6 rust cream
+# yard rows here: direction px (.584,.812), pitch ~53 px, row width ~32 px, one row centreline through (222,158)->(478,462)

@@ -1,0 +1,33 @@
+@ -700 -760 .6
+# ---- Mân Quang bridge and the Thọ Quang fishing fleet rafted either side of it ----
+V 380 240 498 212 24 trawler grey
+V 498 270 618 240 30 trawler rust
+V 398 295 498 272 26 trawler green
+V 560 410 628 392 30 barge rust
+V 600 505 660 500 14 boat white
+V 165 345 198 372 14 boat rust
+C 480 340 fleet 70
+C 545 580 fleet 25
+C 320 860 fleet 32
+C 490 845 fleet 6
+C 500 700 fleet 6
+C 300 1125 fleet 6
+S 765 545 800 580 30 6 teal cream
+S 635 640 665 660 22 5 white cream
+S 745 660 785 665 20 5 blue cream
+S 745 735 785 740 30 5 rust cream
+S 740 790 780 800 28 5 rust cream
+S 750 825 790 835 22 5 rust cream
+S 450 1075 620 1090 50 9 teal white
+S 470 1120 610 1130 40 8 teal white
+S 482 1005 560 1000 26 6 white white
+G sand 520 925 640 930 640 990 520 990
+G conc 565 735 660 720 680 860 560 880
+G houses 680 255 800 250 800 325 690 320
+N 700 540 16
+N 690 580 14
+N 460 990 18
+N 510 900 14
+N 730 1000 20
+N 760 1060 20
+N 660 850 12

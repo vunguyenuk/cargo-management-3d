@@ -1,0 +1,35 @@
+@ 1290 440 .6
+# ---- naval base: paved quay behind the comb pier, warships moored stern-to on the trestles ----
+G conc 0 415 200 400 270 470 290 545 390 625 600 740 640 760 640 930 490 850 445 800 275 655 100 535 0 470
+n 15 468 275 648
+n 300 668 440 775
+V 5 750 30 690 16 navy grey
+V 40 820 90 745 16 navy grey
+V 65 835 112 760 16 navy grey
+V 88 855 135 780 16 navy grey
+V 120 875 170 800 16 navy grey
+V 140 895 195 825 16 navy grey
+V 160 912 215 840 16 navy grey
+V 222 905 285 805 22 cutter white
+S 0 325 125 310 55 14 dark grey          # four-storey barracks
+S 0 262 80 250 22 5 white cream
+S 75 245 130 240 28 6 lgrey cream
+S 12 132 44 132 24 5 teal cream
+S 140 300 172 292 28 6 red cream
+S 268 470 305 520 22 4.5 rust cream
+N 540 810 20
+N 580 870 18
+N 650 800 16
+N 150 380 14
+N 100 385 12
+N 40 390 12
+# ---- across Yết Kiêu: red-roofed blocks at the foot of the hill, memorial park with a pool ----
+S 100 0 170 35 50 8 orange cream
+S 200 55 245 95 40 8 orange cream
+S 249 124 297 191 48 9 red cream
+S 315 198 355 262 68 9 orange cream
+G court 315 300 340 290 352 312 327 322
+S 600 278 648 258 38 6 teal cream        # pool hall
+G conc 572 285 650 238 672 272 596 318
+C 670 395 monument 40
+S 640 338 658 328 12 4 white cream

@@ -1,0 +1,13 @@
+@ 2500 420 .6
+# ---- Tiên Sa finger piers: harbour tugs in the corner, break-bulk on the decks, a coaster on pier 2 ----
+V 180 752 225 738 14 tug grey
+V 420 355 435 312 14 tug grey
+V 488 360 492 312 14 tug grey
+V 510 390 514 342 14 tug grey
+V 420 270 445 260 8 boat white
+V 540 742 675 645 26 cargo grey
+C 275 680 pipes 50          # tower sections laid out on the head of pier 1
+C 330 630 mcrane 0          # mobile harbour crane, boom over the water
+C 480 838 mcrane 0
+C 632 735 mcrane 0
+C 440 545 mcrane 0

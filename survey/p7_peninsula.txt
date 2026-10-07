@@ -1,0 +1,38 @@
+@ 1900 300 .6
+# ---- the point between Tiên Sa and the basin: mole with two jetties, compound with orange roofs ----
+V 537 548 590 625 16 coaster rust
+V 562 545 618 630 20 coaster rust
+V 630 485 690 545 22 coaster rust
+V 648 470 705 525 12 patrol grey
+V 680 455 732 515 14 patrol grey
+V 318 1095 385 1165 18 patrol grey
+S 100 395 205 360 30 8 orange cream
+S 97 372 198 340 26 8 dark cream
+S 120 455 205 430 34 8 orange cream
+S 115 432 198 408 22 8 dark cream
+S 72 565 110 600 34 8 orange cream
+S 62 540 100 568 30 8 dark cream
+S 105 630 160 680 40 8 orange cream
+S 0 630 35 622 24 6 orange cream
+S 40 835 130 808 32 7 orange cream
+S 85 865 140 848 30 7 orange cream
+S 85 915 165 892 34 7 rust cream
+S 118 942 165 935 20 5 red cream
+S 190 832 205 882 38 7 rust cream
+S 170 800 200 790 28 6 blue cream
+S 40 728 72 742 22 5 teal cream
+S 45 760 85 750 22 5 dark cream
+S 243 690 257 690 14 4 red cream
+G conc 165 580 225 570 240 630 180 640
+G pool 50 495 72 490 78 520 55 525
+N 30 430 18
+N 200 480 14
+N 215 520 12
+N 60 690 16
+N 20 780 16
+N 240 745 12
+N 190 745 12
+N 235 930 14
+N 215 950 12
+N 150 500 12
+N 20 520 14

@@ -1,0 +1,48 @@
+@ -130 150 .6
+# ---- LPG plant, east half ----
+O 247 712 20 white
+O 222 648 14 white
+F 347 622 347 738 64 3.2 bullets white   # rack of horizontal bullet tanks
+S 280 537 372 537 42 7 lgrey grey        # filling hall
+S 262 443 330 440 22 5 white cream
+S 235 425 235 470 40 6 blue grey
+S 228 480 245 555 30 6 blue grey
+S 205 590 235 610 25 5 blue grey
+Y 35 425 165 465 32 3
+Y 30 495 175 525 28 3
+Y 0 560 80 590 30 3
+Y 55 590 175 610 22 3
+Y 0 630 170 680 40 4
+Y 0 700 135 745 36 3
+P 52 0 835 195 870 caisson
+P 10 180 790 185 860
+P 8 195 878 265 882
+N 300 410 16
+N 345 415 14
+N 205 490 12
+# ---- asphalt plant on the creek ----
+T 432 640 28 12 lgrey
+T 435 685 30 12 blue
+T 465 620 9 14 lgrey
+T 478 632 9 14 lgrey
+T 470 648 9 14 lgrey
+S 505 585 535 650 38 8 blue grey
+S 545 595 575 635 40 8 blue grey
+S 525 665 555 680 30 6 blue grey
+S 485 675 500 700 20 5 blue grey
+S 388 422 478 402 28 6 blue grey
+S 495 385 530 435 32 7 red cream
+G sand 385 440 560 440 630 560 600 700 400 720 380 600
+W 540 330 640 640 650 690 420 745
+G water 560 335 610 330 660 520 700 700 760 790 680 800 640 690 600 560
+# ---- east bank of the creek (naval compound) ----
+S 735 560 768 635 36 7 teal cream
+S 755 640 790 730 40 7 teal cream
+S 695 455 745 462 26 6 teal cream
+S 757 465 800 470 26 6 teal cream
+S 715 420 778 430 30 7 orange cream
+S 690 380 715 295 30 7 red cream
+S 622 10 628 100 16 4 white cream
+N 600 400 16
+N 620 480 16
+N 650 600 14

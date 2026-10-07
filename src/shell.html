@@ -387,7 +387,7 @@ button.row:hover{background:var(--sunken)}
     </label>
     <label class="pick"><span>View</span>
       <select id="view" aria-label="Camera view">
-        <option value="all">Whole terminal</option><option value="b1">Berth 1</option><option value="b2">Berth 2</option><option value="yard">Container yard</option><option value="gate">Gate</option><option value="tugs">Tug berth</option><option value="bay">From the bay</option><option value="west">Along the quay, west</option>
+        <option value="all">Whole terminal</option><option value="b1">Berth 1</option><option value="b2">Berth 2</option><option value="yard">Container yard</option><option value="gate">Gate</option><option value="tugs">Tug berth</option><option value="bay">From the bay</option><option value="west">Along the quay, west</option><option value="east">Along the quay, east</option><option value="shore">The shore to Tiên Sa</option>
       </select>
     </label>
     <div class="bell sky"><button id="skybtn" aria-label="Time of day and weather" aria-haspopup="true"><svg class="i" viewBox="0 0 20 20"><circle cx="7.5" cy="8" r="3"/><path d="M7.5 2.5v1.2M2 8h1.2M3.6 4.1l.9.9M11.4 4.1l-.9.9M8 15.5h7a2.6 2.6 0 000-5.2 3.6 3.6 0 00-6.6 1A2.2 2.2 0 008 15.5z"/></svg><span id="skylbl">Afternoon · Clear</span></button>
@@ -398,6 +398,7 @@ button.row:hover{background:var(--sunken)}
         <div class="seg" data-k="wx"><button data-v="clear">Clear</button><button data-v="cloudy">Cloudy</button><button data-v="rain">Rain</button><button data-v="fog">Fog</button></div>
         <button id="skyhold" role="switch" aria-checked="false">Hold the sky at this hour<small>Off</small></button>
         <p class="note">The sky follows the terminal clock: one hour passes every ten minutes at 1×. Hold it to keep the light as it is.</p>
+        <p class="note">Surroundings after Sơn Trà Port, Đà Nẵng. Map data © OpenStreetMap contributors; buildings and yards traced over Esri World Imagery.</p>
       </div></div>
     <div class="live" id="live"><i></i><span>Live</span><b id="clock">16:42</b></div>
     <div class="speed" role="group" aria-label="Simulation speed">

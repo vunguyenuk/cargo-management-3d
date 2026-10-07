@@ -1,0 +1,10 @@
+@ 2830 560 .6
+# ---- Tiên Sa west quay: container ship alongside, four yellow ship-to-shore cranes ----
+V 332 538 640 880 68 container rust
+K 420 522 311 610 sts
+K 500 580 391 668 sts
+K 560 655 451 743 sts
+K 612 732 503 820 sts
+F 305 380 340 400 20 3 teal teal
+M 22 290 244 800 240        # rock mound, seaward side
+D 16 290 266 800 268        # causeway behind it

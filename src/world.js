@@ -56,6 +56,10 @@ const CL=12.2,CH=2.6,CW=2.44,BAYP=12.9,ROWP=2.75,MAXT=4,NB=6,NR=5,BED=1.32,DECK=
 // quay has two eastbound lanes between the crane legs: LQ is worked under the cranes, LS is where idle tractors stand by
 const LQ=8,LS=13,HZ=[10,32,58,84,108],ROADS=[8,13,32,58,84,108],HDIR={8:1,13:1,32:-1,58:-1,84:-1,108:1},VXS=[-112,0,112],OFF=2.3,LANES=[32,58,84];
 const GX0=-134,GX1=134,GZ1=160,FENCE_Z=140,GATE_Z=132,GATE_IN=GATE_Z+6.5,GATE_OUT=GATE_Z-6.5,BOOM=5.3;
+// where the terminal sits in the survey grid of the map data (metres, +x west, +z north): origin on the real wharf of Sơn Trà Port, x along its face
+const SITE={x:697.5,z:226.6,rot:Math.atan2(72,187)},_sc=Math.cos(SITE.rot),_ss=Math.sin(SITE.rot);
+const toSim=(x,z)=>[(x-SITE.x)*_sc+(z-SITE.z)*_ss,-(x-SITE.x)*_ss+(z-SITE.z)*_sc],toMap=(x,z)=>[SITE.x+x*_sc-z*_ss,SITE.z+x*_ss+z*_sc];
+const TERM_W=86.9,TERM_E=55.4,ROAD_Z=251;   // where the terminal's west and east sides meet the mapped shore; kerb of Yết Kiêu on the gate road
 
 /* ---------- water ---------- */
 const uT={value:0},waterU={uGl:{value:new T.Color(1,.84,.58)},uGlI:{value:1},uSun3:{value:new T.Vector3(.9,.37,-.25)},uRain:{value:0}};
@@ -187,8 +191,8 @@ function decal(text,x,z,h,css,rot=0){let e=decalCache[text+css];
   [[-100,1.3],[-36,1.4],[28,1.3],[102,1.4],[-8.3,GATE_Z-1],[8.2,GATE_Z+1.5],[40,131],[41.2,131.6],[58,130.4],[-60,133.4],[-58.6,134],[-8.8,50.8],[103.6,77],[-103.4,54.2],[6.6,27]].forEach(([x,z],i)=>person(x,z,i%3?hiv:hio));
   scene.add(B.build());
   // trees
-  const pts=[];for(let x=-190;x<=190;x+=10){if(Math.abs(x)>16)pts.push([x+rr(-1.5,1.5),167+rr(-1,1)]);}
-  for(let z=63;z<=160;z+=11)pts.push([-142+rr(-1,1),z]);for(let z=41;z<=160;z+=11)pts.push([142+rr(-1,1),z]);
+  const pts=[];for(let x=-130;x<=130;x+=10){if(Math.abs(x)>16)pts.push([x+rr(-1.5,1.5),167+rr(-1,1)]);}
+  
   const crown=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),new T.MeshStandardMaterial({roughness:.9,flatShading:true}),pts.length),trunk=new T.InstancedMesh(new T.CylinderGeometry(.18,.26,1,6),M_(0x5f4636),pts.length);
   const greens=[0x6f8f45,0x5f8a4c,0x869a48,0x55804f];
   pts.forEach(([x,z],i)=>{const s=rr(.8,1.3);_o.rotation.set(0,rr(0,6),0);_o.position.set(x,2*s,z);_o.scale.set(1,4*s,1);_o.updateMatrix();trunk.setMatrixAt(i,_o.matrix);
@@ -742,9 +746,9 @@ function* extLoop(tr,delay){
       if(!deliver){a.box=topOf(st);a.box.appt=a;}}
     a.status='At gate';a.truck=tr;tr.appt=a;tr.id=a.truckId;tr.haul=a.haul;tr.plate=a.plate;tr.job=a.type;tr.cargo=null;
     if(deliver){const bx=new Box();bx.dir='Export';bx.where='truck';bx.ref=tr;tr.cargo=bx;a.box=bx;}
-    yield* until(()=>simT>spawnAt&&!trucks.some(o=>o.active&&o.body.some(q=>Math.abs(q.x-OFF)<2.6&&q.z>186)));spawnAt=simT+4;
+    yield* until(()=>simT>spawnAt&&!trucks.some(o=>o.active&&o.body.some(q=>Math.abs(q.x-OFF)<2.6&&q.z>ROAD_Z-34)));spawnAt=simT+4;
     tr.v=0;tr.place(0,400,1);tr.active=true;tr.pop=0;stats.gateIn++;
-    tr.status='Arriving at gate';tr.dest='Gate in';yield* drive(tr,[{x:OFF,z:215},{x:OFF,z:GATE_IN}]);
+    tr.status='Arriving at gate';tr.dest='Gate in';yield* drive(tr,[{x:OFF,z:ROAD_Z-4},{x:OFF,z:GATE_IN}]);
     tr.status='Gate check';a.tIn=simT;yield* sleep(2.6);a.status='In terminal';ev('gate',`${tr.id} gated in · ${a.type.toLowerCase()}`,tr);
     const B={x:st.x,z:st.blk.lane},vi=upV(B.x,-1),G={x:OFF,z:GATE_IN};
     yield* drive(tr,vi===0?[G,{x:OFF,z:B.z},B]:[G,{x:OFF,z:108},{x:vx(vi,108,B.z),z:108},{x:vx(vi,108,B.z),z:B.z},B],{gate:gates[0],onGo:()=>{tr.status=deliver?'Delivering export':'Collecting import';tr.dest='Block '+slotName(st);}});
@@ -754,7 +758,7 @@ function* extLoop(tr,delay){
     yield* drive(tr,vo===0?[A,{x:-OFF,z:A.z},E]:[A,{x:vo-OFF,z:A.z},{x:vo-OFF,z:108},{x:-OFF,z:108},E]);
     tr.status='Gate out';yield* sleep(1.6);tr.trips++;a.turn=(simT-a.tIn)*6/60;stats.turn.push(a.turn);if(stats.turn.length>6)stats.turn.shift();
     a.status='Completed';stats.gateDone++;ev('gate',`${tr.id} gated out · turn ${a.turn.toFixed(1)} min`,null);
-    yield* openGate(gates[1],tr);tr.status='Leaving';yield* drive(tr,[E,{x:-OFF,z:215}]);
+    yield* openGate(gates[1],tr);tr.status='Leaving';yield* drive(tr,[E,{x:-OFF,z:ROAD_Z-4}]);
     if(tr.cargo){tr.cargo.free();tr.cargo=null;}
     tr.active=false;if(sel===tr)select(null);stats.gateIn--;yield* sleep(rr(3,12));
   }

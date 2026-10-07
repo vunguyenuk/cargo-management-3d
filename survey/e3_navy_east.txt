@@ -1,0 +1,57 @@
+@ -430 230 .6
+# ---- naval compound east of the creek: barrack blocks round a garden, teal sheds on the creek, big hardstanding ----
+S 195 352 262 362 34 7 orange cream
+S 315 372 385 380 30 7 red cream
+S 178 437 245 445 32 7 orange cream
+S 298 458 372 465 30 7 red cream
+S 185 495 190 560 36 7 orange cream
+S 280 527 352 535 32 7 red cream
+S 125 368 115 465 34 8 red cream
+S 8 478 75 485 30 7 orange cream
+S 5 350 5 440 28 7 red cream
+S 28 615 72 785 50 8 teal cream
+S 110 755 155 750 34 6 teal cream
+S 0 512 40 515 22 5 teal cream
+S 50 520 95 525 22 5 teal cream
+S 108 545 105 600 14 5 teal cream
+S 95 605 100 650 16 5 teal cream
+C 280 645 roundabout 35
+G court 212 385 238 385 238 418 212 418
+G asph 390 365 515 365 520 400 800 430 800 720 710 785 460 800 310 745 350 560
+S 555 505 552 562 40 8 teal cream
+G court 492 505 535 505 535 590 492 590
+S 598 522 640 552 36 6 red cream
+S 665 550 705 585 36 6 red cream
+S 735 550 765 580 30 6 red cream
+G grass 150 580 215 580 215 690 150 690
+N 240 720 20
+N 200 600 14
+N 440 330 14
+N 600 610 16
+N 700 620 16
+N 680 480 16
+N 760 470 16
+# floating dock and lay-up berth in the cove
+F 310 965 415 965 70 6 fdock rust
+V 265 1018 412 1018 44 barge green
+V 452 1035 452 900 30 navy grey
+P 8 305 1050 710 1082
+N 760 830 30
+N 740 900 30
+N 730 1000 30
+N 760 1100 30
+# ---- north of Yết Kiêu: headquarters compound ----
+S 380 130 380 190 62 9 red cream
+S 695 185 695 270 70 10 red cream
+S 500 45 640 60 50 12 red cream
+S 135 102 205 95 22 5 white cream
+S 145 140 208 132 22 5 white cream
+S 150 180 218 172 22 5 white cream
+S 232 92 278 88 36 6 teal cream
+S 228 182 272 176 18 5 teal cream
+S 190 5 275 5 30 8 white cream
+N 300 60 18
+N 330 230 16
+N 460 230 16
+N 560 150 14
+N 760 150 18

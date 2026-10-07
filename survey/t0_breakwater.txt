@@ -1,0 +1,2 @@
+@ 2850 450 1
+P 24 165 262 385 263          # concrete head of the Tiên Sa breakwater (whole length, from the 1 m/px tile)

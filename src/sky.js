@@ -31,10 +31,10 @@ const mkPal=()=>({c:[0,1,2,3,4,5,6].map(()=>new T.Color()),n:[0,0,0,0,0,0]});
 const palT=mkPal(),pal=mkPal();   // c: zenith, horizon, light, ambient sky, ambient ground, water, glint; n: light, ambient, glint, night, stars, warm
 function samplePal(h,out){let i=1;while(i<KEYS.length-1&&KEYS[i].h<h)i++;const a=KEYS[i-1],b=KEYS[i],t=clamp((h-a.h)/(b.h-a.h),0,1);
   for(let k=0;k<7;k++)out.c[k].copy(a.c[k]).lerp(b.c[k],t);for(let k=0;k<6;k++)out.n[k]=lerp(a.n[k],b.n[k],t);}
-// where the sun stands: rises in the east (-x), passes south over the bay (-z) and sets in the west (+x)
+// where the sun stands: rises in the east, passes south over the bay and sets in the west, worked out in map bearings and turned into the terminal's frame
 const sunDir=V(0,1,0),moonDir=V(-.42,.74,-.53).normalize(),sunT=V(0,1,0);
 function sunAt(h,out){const p=(h-SUNRISE)/(SUNSET-SUNRISE)*Math.PI,s=Math.sin(p),el=(s>=0?72*Math.pow(s,.75):-30*Math.pow(-s,.6))*Math.PI/180;
-  let hx=-Math.cos(p),hz=-.42*Math.abs(s)-.18;const l=Math.hypot(hx,hz);return out.set(hx/l*Math.cos(el),Math.sin(el),hz/l*Math.cos(el));}
+  let hx=-Math.cos(p),hz=-.42*Math.abs(s)-.18;const l=Math.hypot(hx,hz),[cx,cz]=[hx*_sc+hz*_ss,-hx*_ss+hz*_sc];return out.set(cx/l*Math.cos(el),Math.sin(el),cz/l*Math.cos(el));}
 
 /* sky dome: gradient, sun, moon, stars, drifting cloud and the far shores of the bay */
 const skyU={uZen:{value:new T.Color()},uHor:{value:new T.Color()},uSunC:{value:new T.Color()},uSunD:{value:V(0,1,0)},uMoonD:{value:moonDir},uCloudA:{value:new T.Color()},uCloudB:{value:new T.Color()},uSil:{value:new T.Color()},
@@ -62,7 +62,7 @@ void main(){
   c=mix(c,cl,cov);
   if(y<0.)c=uEnv>.5?mix(uHor*.6,uGround,clamp(-y*6.,0.,1.)):mix(uHor,uHor*.92,clamp(-y*5.,0.,1.));
   // far side of the bay: the Hai Van range to the west and north-west, the city low on the southern shore
-  float az=atan(d.z,d.x),w1=smoothstep(-1.75,-1.1,az)*smoothstep(.95,.5,az),w2=smoothstep(-2.75,-2.35,az)*smoothstep(-.75,-1.15,az);
+  float az=atan(d.z,d.x)+0.3675;if(az>3.14159)az-=6.28318;float w1=smoothstep(-1.75,-1.1,az)*smoothstep(.95,.5,az),w2=smoothstep(-2.75,-2.35,az)*smoothstep(-.75,-1.15,az);
   float m1=(.022+.05*fbm(vec2(az*2.2+4.,1.))+.012*sin(az*9.))*w1*(.55+.45*smoothstep(-1.2,.3,az)),m2=(.012+.03*fbm(vec2(az*4.1,7.)))*w1;
   float hb=h21(vec2(floor(az*150.),3.)),ch=(.0035+.016*pow(hb,3.))*w2;
   vec3 sil=mix(uHor,uSil,.42),sil2=mix(uHor,uSil,.66);

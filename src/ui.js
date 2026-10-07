@@ -1,10 +1,10 @@
 
 /* ---------- camera ---------- */
 const VIEWS={all:{tx:20,tz:40,dist:520,az:.66,el:.63},b1:{tx:-62,tz:4,dist:215,el:.63},b2:{tx:62,tz:4,dist:215,el:.63},yard:{tx:0,tz:66,dist:300,el:.63},gate:{tx:8,tz:130,dist:175,el:.63},
-  bay:{tx:30,tz:60,dist:760,az:2.62,el:.085},west:{tx:10,tz:-30,dist:560,az:-1.2,el:.1},tugs:{tx:-150,tz:10,dist:250,az:2.2,el:.4}};
+  bay:{tx:30,tz:60,dist:760,az:2.62,el:.085},west:{tx:10,tz:-10,dist:560,az:-1.75,el:.1},east:{tx:-60,tz:40,dist:620,az:1.6,el:.16},shore:{tx:900,tz:-300,dist:2600,az:3,el:.3},tugs:{tx:158,tz:24,dist:250,az:2.6,el:.4}};
 const view={tx:20,tz:40,dist:520,az:.66,el:.63},cur=Object.assign({},view);let W=1,H=1,narrow=1,shiftT=0,shiftC=0;
 function applyCam(){const ce=Math.cos(cur.el),d=cur.dist*narrow,fv=18+15*sstep(.46,.07,cur.el);if(Math.abs(fv-cam.fov)>.02){cam.fov=fv;cam.updateProjectionMatrix();}   // the lens opens up as the view drops to the horizon, so the sky comes into frame
-  cam.position.set(cur.tx+d*Math.sin(cur.az)*ce,d*Math.sin(cur.el),cur.tz+d*Math.cos(cur.az)*ce);const gh=terrainH(cam.position.x,cam.position.z)+22;if(cam.position.y<gh)cam.position.y=gh;cam.lookAt(cur.tx,0,cur.tz);
+  cam.position.set(cur.tx+d*Math.sin(cur.az)*ce,d*Math.sin(cur.el),cur.tz+d*Math.cos(cur.az)*ce);const gh=terrainS(cam.position.x,cam.position.z)+22;if(cam.position.y<gh)cam.position.y=gh;cam.lookAt(cur.tx,0,cur.tz);
   if(Math.abs(shiftC)>1)cam.setViewOffset(W,H,-shiftC,0,W,H);else if(cam.view)cam.clearViewOffset();
   // haze: further when looking towards the horizon, closer in rain and fog
   const reach=Math.min(Math.max(900,d*3)+5200*sstep(.55,.1,cur.el),wx.vis);
@@ -18,7 +18,7 @@ function pickAt(cx,cy){const r=canvas.getBoundingClientRect();ndc.set((cx-r.left
   const hits=ray.intersectObjects(list,true);
   for(const h of hits){if(h.object===CIM){const b=boxAt[h.instanceId];if(b)return b;continue;}let o=h.object;while(o&&!o.userData.ent)o=o.parent;if(o)return o.userData.ent;}return null;}
 const ptrs=new Map();let grab=null,moved=0,pinch=null,follow=false;
-const DMIN=70,DMAX=1500,ELMIN=.045,ELMAX=1.3;
+const DMIN=70,DMAX=2600,ELMIN=.045,ELMAX=1.3;
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY,b:e.button,sh:e.shiftKey});moved=0;
   if(ptrs.size===1){grab=groundAt(e.clientX,e.clientY);canvas.classList.add('drag');}
   else if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),a:Math.atan2(b.y-a.y,b.x-a.x),dist:view.dist,az:view.az};grab=null;}});
@@ -27,7 +27,7 @@ canvas.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);
   const dx=e.clientX-p.x,dy=e.clientY-p.y;moved+=Math.abs(dx)+Math.abs(dy);p.x=e.clientX;p.y=e.clientY;
   if(ptrs.size===2&&pinch){const [a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y),an=Math.atan2(b.y-a.y,b.x-a.x);view.dist=clamp(pinch.dist*pinch.d/d,DMIN,DMAX);view.az=pinch.az-(an-pinch.a);return;}
   if(p.b===2||p.b===1||p.sh){view.az-=dx*.006;cur.az=view.az;view.el=clamp(view.el+dy*.004,ELMIN,ELMAX);cur.el=view.el;applyCam();return;}
-  if(grab&&moved>4){follow=false;const g=groundAt(e.clientX,e.clientY);if(g){view.tx=clamp(view.tx+grab.x-g.x,-1300,2700);view.tz=clamp(view.tz+grab.z-g.z,-2400,700);cur.tx=view.tx;cur.tz=view.tz;applyCam();}}});
+  if(grab&&moved>4){follow=false;const g=groundAt(e.clientX,e.clientY);if(g){view.tx=clamp(view.tx+grab.x-g.x,-1900,2500);view.tz=clamp(view.tz+grab.z-g.z,-2000,800);cur.tx=view.tx;cur.tz=view.tz;applyCam();}}});
 const up=e=>{const p=ptrs.get(e.pointerId);ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size){canvas.classList.remove('drag');if(p&&moved<6&&e.type==='pointerup'&&p.b===0)select(pickAt(e.clientX,e.clientY),false);}};
 canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('pointerleave',()=>{hoverAt=null;hov=null;});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -126,7 +126,7 @@ function card(e){
   if(e.kind==='vessel'){const b=e.berth;return head('vessel','Vessel · '+b.name,e.name,`${e.imo} · voy. ${e.voy} · ${e.line.n}`)+`<div class="istat">${pill(e.status)}<span>${e.mode==='discharge'?'Import discharge':'Export loading'}</span></div>`+prog(e.done,e.planned)+
     kv([['Line',esc(e.line.n)],['Length overall','172 m'],['Berth',b.name+' · starboard side to, bow out'],['Tugs',tugs.filter(t=>t.assist===e).map(t=>link(t)).join(' · ')||'—'],['Quay cranes',b.cranes.map(c=>link(c)).join(' · ')],['Arrived',clockAt(e.tArr),1],['Est. departure',clockAt(etdOf(e)),1],['Last move',e.last?link(e.last.box):'—',1]])+
     `<div class="acts"><button class="btn" data-mod="vessels">Open bay plan</button></div>`;}
-  if(e.kind==='tug')return head('tug','Harbour tug · Tideline Towage',e.name,'ASD tug · 27 m · 45 t bollard pull')+`<div class="istat">${pill(e.status)}<span>${e.fast?'Line made fast':e.push?'Pushing':'No line out'}</span></div>`+
+  if(e.kind==='tug')return head('tug','Harbour tug · Tideline Towage',e.name,'ASD tug · 20 m · 30 t bollard pull')+`<div class="istat">${pill(e.status)}<span>${e.fast?'Line made fast':e.push?'Pushing':'No line out'}</span></div>`+
     kv([['Assisting',e.assist&&!e.assist.dead?link(e.assist):'—'],['Speed',(e.spd*1.944/3).toFixed(1)+' kn',1],['Heading',Math.round((Math.atan2(-(.984*Math.cos(e.h)+.177*Math.sin(e.h)),.177*Math.cos(e.h)-.984*Math.sin(e.h))*180/Math.PI+360)%360)+'°',1],['Ship moves this session',e.jobs,1],['Berth','Tug pontoon, east cove']]);
   if(e.kind==='sts'){const v=e.berth.vessel;return head('sts','Quay crane · '+e.berth.name,e.id,'Ship-to-shore gantry · 16 rows outreach')+`<div class="istat">${pill(e.status)}<span>${e.cargo?'Laden':'Empty spreader'}</span></div>`+
     kv([['Vessel',link(v)],['Working bay',v?'Bay '+v.cols[Math.min(e.col,e.range[1])].bay:'—',1],['On hook',e.cargo?link(e.cargo):'—',1],['Truck in lane',e.atStop?link(e.atStop):'—',1],['Boom',e.boom<.02?'Down':e.boom>1.2?'Raised':'Moving'],['Hoist height',e.h.toFixed(1)+' m',1],['Moves this session',e.moves,1]]);}
@@ -352,3 +352,4 @@ function frame(now){
 new ResizeObserver(resize).observe(app);resize();applyPanels();initNight();
 for(let i=0;i<1500;i++)step(.05);
 uiTick(true);requestAnimationFrame(frame);
+

@@ -1,0 +1,34 @@
+@ 1010 420 .6
+# ---- naval quay west of the inlet: wide empty concrete apron, boathouse, pitch, barracks along the road ----
+G conc 22 688 318 690 600 740 628 770 605 893 20 785
+G pitch 300 640 520 668 520 722 300 690
+S 352 712 445 722 28 5 teal grey       # boathouse on the apron
+G sand 440 560 600 540 615 640 440 640
+S 170 580 300 545 42 8 dark grey       # long barracks
+S 325 528 358 516 16 5 white cream
+S 420 485 478 462 20 5 rust cream
+S 512 462 540 440 26 6 white cream
+S 578 470 600 445 22 5 rust cream
+S 622 440 665 452 26 6 teal cream
+S 0 602 45 602 26 6 orange cream
+S 48 607 95 607 34 6 dark grey
+S 115 612 150 618 20 4.5 white cream
+N 60 655 18
+N 200 675 14
+N 255 668 14
+N 310 610 16
+N 400 540 16
+N 520 500 18
+N 560 520 14
+N 495 580 10
+N 610 600 14
+N 600 720 14
+N 30 560 14
+N 110 565 14
+N 180 540 12
+# ---- north of the road: small compound in the forest ----
+S 225 30 295 80 22 5 white cream
+S 290 80 360 125 26 5 white cream
+F 210 105 236 105 28 5 white cream
+S 312 145 365 145 22 5 white cream
+S 12 95 12 135 30 6 teal cream

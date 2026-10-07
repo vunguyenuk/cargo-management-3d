@@ -1,0 +1,46 @@
+@ 1560 520 .6
+# ---- naval base: long pier with five boats, comb pier with the bigger hulls, workshops and barracks ashore ----
+V 180 545 180 630 18 navy grey
+V 206 545 207 628 18 navy grey
+V 232 543 233 622 18 navy grey
+V 259 540 261 618 18 navy grey
+V 284 538 287 612 18 navy grey
+V 372 820 325 872 15 navy grey
+V 392 838 347 890 15 navy grey
+V 412 855 372 905 15 navy grey
+V 438 868 400 925 15 navy grey
+V 472 890 410 978 20 navy grey
+V 518 920 462 1010 18 navy grey
+V 560 950 497 1038 18 navy grey
+V 603 970 505 1130 22 frigate grey
+V 672 1015 610 1100 18 cutter white
+V 700 1035 637 1118 18 cutter white
+V 722 1050 665 1135 18 navy grey
+V 760 1075 700 1155 18 navy grey
+V 790 1095 725 1170 18 navy grey
+S 410 212 475 290 52 9 tan grey          # workshop
+S 500 337 538 480 95 11 tan grey         # three-bay workshop
+S 380 245 410 270 22 5 white cream
+S 505 612 695 575 62 14 dark grey        # main barracks block
+S 567 540 640 525 28 7 white cream
+S 645 530 705 518 28 7 lgrey cream
+S 450 550 498 545 55 7 dark grey
+S 472 582 478 640 26 5 white cream
+S 585 415 618 408 22 5 teal cream
+S 715 572 748 590 26 6 orange cream
+S 205 10 285 112 40 8 red cream
+S 318 165 372 135 30 8 orange cream
+S 305 140 350 105 20 6 teal cream
+G conc 540 715 765 690 800 700 800 890 690 825 575 740
+n 372 310 425 680
+N 600 660 14
+N 660 655 14
+N 720 650 14
+N 560 665 12
+N 430 320 12
+# across the road
+S 560 180 590 165 22 5 red cream
+S 640 240 690 222 30 7 orange cream
+S 690 252 733 315 62 9 orange cream
+S 735 250 765 300 22 7 lgrey cream
+S 765 340 800 360 30 7 orange cream

@@ -1,0 +1,22 @@
+@ 2520 760 .6
+# ---- knoll north of Tiên Sa: memorial circle, long white shed, drying field; forest between the two yards ----
+S 605 225 695 320 26 6 white cream
+S 672 335 712 365 28 6 rust cream
+S 740 355 780 375 26 6 white cream
+G dark 500 268 572 290 545 410 445 380
+G sand 560 330 700 380 780 480 700 600 560 590 540 480
+C 625 455 monument 45
+F 148 693 172 725 24 5 white white
+F 145 728 170 752 24 5 rust white
+N 250 620 40
+N 330 760 45
+N 250 800 40
+N 420 700 40
+N 520 700 35
+N 620 660 30
+N 720 580 30
+N 440 600 30
+N 560 200 30
+N 500 170 25
+N 700 120 35
+N 430 450 20

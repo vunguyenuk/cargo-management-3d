@@ -1,0 +1,19 @@
+@ 712 300 .6
+# ---- behind the terminal (real port ground between the yard and Yết Kiêu) ----
+S 451 239 596 334 75 11 lgrey grey     # the port's transit warehouse
+S 440 215 465 195 20 5 red cream       # gatehouse by the road
+Y 701 462 745 374 80 4                 # real stack block east of the access road (containers lie along sim z)
+# ---- west neighbour: depot lot between the inlet and the road ----
+S 97 30 67 145 62 9 white white        # long white shed with skylights
+S 218 62 202 128 48 8 white white
+S 252 155 312 195 75 8 lgrey grey      # square grey shed
+S 92 8 148 18 22 5 red cream
+S 290 85 320 100 22 5 rust cream
+G lsand 400 135 460 160 330 385 295 390 300 330      # pale sand strip
+C 245 270 steel 55
+C 215 330 steel 30
+N 110 330 14
+N 170 345 14
+N 240 395 14
+N 150 380 12
+N 335 95 12

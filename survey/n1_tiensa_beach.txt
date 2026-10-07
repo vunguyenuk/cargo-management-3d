@@ -1,0 +1,31 @@
+@ 1900 900 .6
+# ---- Tiên Sa beach on the bay side: guesthouse with teal roofs, palms along the sand, floating pontoon ----
+S 275 520 415 498 40 7 teal cream
+S 300 575 378 562 36 7 teal cream
+S 222 580 295 572 38 7 red cream
+G pool 215 522 268 515 270 535 218 542
+S 428 612 478 608 48 9 teal white
+S 385 580 400 625 20 6 white cream
+S 485 678 528 675 20 5 red cream
+S 500 594 540 592 14 4 dark cream
+S 508 622 552 625 14 4 dark cream
+S 540 482 548 540 18 5 white cream
+S 410 455 432 520 18 5 white cream
+S 630 622 710 640 36 7 lgreen white
+S 705 675 775 700 62 8 lgreen white
+S 208 735 285 718 30 6 red cream
+S 132 685 200 738 16 4 dark cream
+S 5 590 50 580 55 7 red cream
+S 0 700 62 690 36 6 teal cream
+S 760 250 785 355 60 9 orange cream
+n 130 480 330 420 520 330 640 230 720 110
+P 8 262 290 330 385
+C 225 300 platform 40
+N 600 420 40
+N 700 480 40
+N 480 420 25
+N 120 640 30
+N 350 680 20
+N 620 540 25
+N 720 560 20
+N 60 520 25

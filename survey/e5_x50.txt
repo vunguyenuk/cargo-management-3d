@@ -1,0 +1,76 @@
+@ -880 -60 .6
+# ---- X50 / Sông Thu shipyards: assembly halls with white roofs, workshops, offices; depots across the road ----
+T 305 52 24 11 white
+T 330 143 24 11 white
+T 360 245 25 11 white
+T 238 300 25 11 white
+T 382 315 25 11 white
+T 380 378 12 8 white
+T 422 370 12 8 white
+S 55 1022 300 956 185 22 white white       # main assembly hall
+S 80 1140 350 1090 90 20 white white
+S 434 935 572 900 143 16 white lgreen
+S 605 889 706 861 82 12 white white
+S 500 1140 630 1105 80 12 teal white
+S 640 1035 730 1060 60 16 white white      # office block
+S 5 640 115 625 45 9 white white
+S 0 705 130 690 60 9 white white
+S 145 645 275 628 50 9 white white
+S 160 705 295 690 55 9 white white
+S 0 445 35 440 50 8 white white
+S 0 495 60 485 50 8 white white
+S 0 545 78 535 55 8 white white
+S 100 430 165 415 85 9 lgreen white
+S 190 380 235 495 55 9 red cream
+S 132 490 195 478 24 5 rust cream
+Y 10 320 135 335 60 3
+S 270 572 445 535 30 8 rust cream
+S 290 540 358 525 26 7 red cream
+S 345 655 478 628 46 8 white white
+G pitch 330 575 425 563 432 625 338 637
+S 470 550 500 622 42 7 blue white
+S 510 520 560 605 70 14 rust white         # office block, mixed roofs
+S 598 490 625 585 36 8 red cream
+S 538 265 568 362 40 8 lgrey white
+S 452 312 495 302 40 6 white white
+S 432 228 448 282 22 6 rust cream
+S 495 400 545 388 30 6 rust cream
+S 485 370 540 362 18 5 teal cream
+G pond 392 72 455 62 465 138 400 148
+S 462 45 478 110 20 5 white cream
+G grass 305 425 388 415 395 495 312 505
+C 310 380 steel 28
+C 390 445 steel 28
+S 200 800 240 860 40 9 rust cream
+S 250 790 290 850 40 9 rust cream
+S 160 800 195 860 22 12 white white
+S 0 850 50 870 40 8 white white
+Y 55 765 140 755 40 3
+Y 385 755 530 735 30 3
+Y 515 720 620 700 30 3
+Y 380 815 490 825 28 3
+Y 500 815 610 795 26 3
+Y 625 745 695 740 40 3
+Y 640 780 695 775 30 3
+Y 330 775 355 845 22 3
+C 360 980 steel 60
+C 540 1065 steel 50
+# east of Yết Kiêu: container depot
+Y 705 120 795 100 40 3
+Y 715 165 800 150 30 3
+Y 720 195 800 180 26 3
+Y 690 280 800 255 40 4
+Y 705 340 800 320 40 4
+Y 720 400 800 385 36 3
+Y 760 460 800 455 40 3
+Y 660 215 700 420 26 3
+S 615 120 660 135 45 8 white white
+S 650 5 745 50 60 10 teal white
+S 775 520 800 575 40 8 white white
+N 600 400 16
+N 505 440 14
+N 395 520 12
+N 470 720 12
+N 120 600 14
+N 700 800 14
+N 750 990 14

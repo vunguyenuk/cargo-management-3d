@@ -1,0 +1,36 @@
+@ 150 150 .6
+# ---- LPG plant, west half: two spheres, depot of stacked containers, the old caisson jetty ----
+O 450 675 22 white
+O 590 520 17 salmon
+S 540 520 572 490 22 5 white grey
+S 572 462 635 488 30 7 blue white
+C 520 575 roundabout 18
+G asph 500 400 560 440 520 600 500 720 400 800 330 740 450 560
+G grass 392 690 440 650 520 680 500 770 430 790 385 760      # bund round the big sphere
+Y 525 780 765 850 28 3
+Y 585 730 800 790 26 3
+Y 620 660 800 700 22 3
+Y 650 600 800 635 24 3
+Y 665 530 800 570 30 3
+Y 625 545 535 735 30 3
+P 52 520 930 800 965 caisson
+P 10 455 915 520 928
+G conc 205 690 250 715 245 740 465 850 440 900 345 850 335 860 200 780
+P 8 170 738 210 750
+# ---- border guard post west of the plant: red roofs round a garden court ----
+S 115 520 165 465 40 7 red cream
+S 175 425 195 445 20 5 red cream
+S 200 440 240 470 30 6 red cream
+S 240 460 275 485 30 6 red cream
+S 95 560 140 580 30 6 red cream
+G grass 165 500 260 530 240 610 150 600
+V 38 590 75 605 10 patrol grey
+V 90 610 140 630 9 patrol grey
+G sand 0 180 70 90 390 310 300 440 160 400 0 300
+N 420 420 30
+N 380 520 30
+N 420 570 22
+N 350 650 28
+N 470 380 20
+N 320 500 16
+N 300 600 14

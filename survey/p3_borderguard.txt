@@ -1,0 +1,52 @@
+@ 430 250 .6
+# ---- Hải đội 2 Biên phòng (border guard squadron 2): walled compound, red tile roofs, cream walls ----
+W 217 648 383 352 440 268 642 387 412 765 217 648
+G conc 217 648 383 352 440 268 642 387 412 765
+S 548 462 585 400 38 10 red cream      # HQ block, NE
+S 418 430 488 470 30 8 red cream
+S 378 490 458 530 30 8 red cream
+S 298 620 382 662 30 8 red cream
+S 345 490 375 448 22 6 red cream
+S 293 578 322 530 22 6 red cream
+S 470 575 508 522 28 7 red cream
+S 425 648 458 600 22 6 red cream
+S 392 705 420 676 20 5 red cream
+S 243 640 268 652 16 4.5 red cream
+S 438 283 482 305 18 5 red cream       # north gate range
+S 588 368 628 390 18 5 red cream
+F 493 311 507 325 14 4 red cream
+G grass 345 560 375 525 408 548 378 588      # football pitch
+G blue 335 585 352 572 368 600 350 612       # sports court
+S 385 615 428 560 22 5 white cream     # canopy by the pitch
+G sand 455 370 500 345 545 395 498 425       # parade ground
+# patrol boats, stern to the quay (7)
+V 222 672 187 714 13 patrol grey
+V 250 690 215 742 13 patrol grey
+V 278 706 243 768 13 patrol grey
+V 306 722 271 784 13 patrol grey
+V 334 738 299 792 13 patrol grey
+V 362 754 327 800 13 patrol grey
+V 390 770 355 812 13 patrol grey
+# ---- vacant reclaimed lot east of the compound, fishing boats rafted at its quay ----
+G sand 412 765 642 387 800 470 800 720 700 860 597 860
+G grass 440 760 520 640 640 700 600 800 560 830
+C 500 885 fleet 18
+# ---- buildings further east (to be continued in the next tile) ----
+S 700 850 760 785 30 7 red cream
+S 680 885 730 895 30 6 red cream
+S 760 745 790 765 20 5 red cream
+# ---- east strip of the real port, between the terminal and the compound wall ----
+C 225 525 tarp 40
+C 270 520 tarp 22
+S 322 432 358 380 22 6 blue grey
+S 270 415 300 385 18 5 lgrey grey
+S 300 465 322 445 16 4.5 blue grey
+F 216 372 240 388 20 5 white white
+F 185 297 235 322 12 3 white white      # reefer / office cabins
+F 232 330 280 352 14 3 white white
+S 262 280 290 292 16 4.5 rust cream
+S 295 290 322 308 22 5 lgrey cream
+S 318 310 345 328 18 5 white cream
+G court 352 300 380 285 398 330 370 346   # tennis court
+S 392 345 418 300 14 4 white cream
+S 262 250 288 230 18 5 blue grey
