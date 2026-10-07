@@ -2071,6 +2071,7 @@ const ROAD_S=[[-232,-956],[-130,-1005],[-40,-1052],[60,-1110],[170,-1190],[250,-
 const ROAD_X=ROAD_S.concat((()=>{const o=[];for(let u=90;u<TP.L+1;u+=(TP.L-90)/24)o.push(TP.at(Math.min(u,TP.L),0));o.push(TP.at(TP.L+90,0),TP.at(TP.L+200,0));return o;})());
 // Yết Kiêu itself carries on south-east past the Lê Đức Thọ junction towards the city: the way the hauliers come and go
 const ROAD_Y=[[-1207,-424],[-1262,-540],[-1330,-700],[-1420,-900],[-1500,-1110],[-1560,-1300]];
+const TSG={in:[2033.3,733.5],out:[2020.9,723.5]};   // Tiên Sa's port gate: where a truck stops at it on the way in and on the way out (points on ways 4 and 14)
 const HWX=MAP.hw.length;   // the ways added here: the Yết Kiêu stub, the road to Thuận Phước, its other carriageway's start, the merge
 MAP.hw.push(['T',...ROAD_Y.flat()],['P',...ROAD_S.flat()],['P',-236,-964,...ROAD_S[1]]);
 MAP.hw[5].splice(1,0,-1205.9,-426.8,-1196,-452);MAP.hw[52].push(-1205,-458,-1212.2,-430.9);   // Lê Đức Thọ's two carriageways carried round to meet Yết Kiêu
@@ -2349,10 +2350,16 @@ const GEO=[['Vũng Thùng',330,0,-330],['Vịnh Đà Nẵng',3050,0,260],['Bán 
     for(const d of [1768,1842,1905])truck(-1255,d,rr+(hrand()<.5?Math.PI:0));
     // reach stackers working the blocks behind the inner quay
     {const st=stackerProp();for(const [n,d,r] of [[-1158,2112,rr-Math.PI/2],[-1157,2204,rr-Math.PI/2],[-1190,2262,rr],[-1040,2150,rr+Math.PI/2]]){const [x,z]=P(n,d);if(!inPoly(port,x,z)||inFoot(x,z,3))continue;const Q=stamp(st.S,x,0,z,r);boxAt1(Q(...st.hang),r+Math.PI/2);}}
-    // gate on the port road: canopy, booths, lane islands
-    {const G=new Builder(),roofM=M_(0xe3a81c);G.box(M_(0xdedbd3),26,.3,8,0,6.6,0);G.box(roofM,26.4,.7,8.4,0,6.1,0);G.box(white,26.5,.2,8.5,0,5.75,0);for(const x of [-12,-4,4,12])G.box(white,.5,5.8,.5,x,2.9,0);
-      for(const x of [-4,4]){G.box(white,1.9,2.7,3.2,x,1.55,0);G.box(glass,1.95,1,3.25,x,2.05,0);G.box(roofM,2.3,.18,3.6,x,3,0);G.box(conc,2.5,.22,6,x,.11,0);}
-      stamp(G,2034,0,733,Math.atan2(95,-88)+Math.PI/2,1,true);}}
+    // gate on the port road, where the way in and the way out run side by side: one canopy across both, the booths on the island between them
+    // (each on its driver's left), a boom beyond each booth, a stop line under the roof
+    {const G=new Builder(),roofM=M_(0xe3a81c),red=M_(0xd0281f),gi=TSG.in,go=TSG.out,ax=go[0]-gi[0],az=go[1]-gi[1],half=Math.hypot(ax,az)/2,E=half+5.7,up=70*Math.PI/180;
+      G.box(M_(0xdedbd3),2*E+1.6,.3,9,0,6.75,0);G.box(roofM,2*E+2,.75,9.4,0,6.25,0);G.box(white,2*E+2.1,.2,9.5,0,5.88,0);
+      for(const x of [-E,-3.05,3.05,E])for(const z of [-3,3])G.box(white,.45,5.8,.45,x,2.9,z);
+      G.box(conc,6.5,.26,18,0,.13,0);for(const z of [-9.6,9.6])G.box(roofM,1.1,.9,1.1,0,.45,z);
+      for(const [x,z,d] of [[-1.95,1.4,-1],[1.95,-1.4,1]]){G.box(white,1.9,2.7,3.2,x,1.61,z);G.box(glass,1.95,1,3.25,x,2.12,z);G.box(roofM,2.3,.18,3.6,x,3.05,z);
+        const bz=z-d*5.4,bx=d*3;G.box(roofM,.34,1.1,.34,bx,.81,bz);G.box(red,5.2,.13,.13,bx+d*Math.cos(up)*2.6,1.3+Math.sin(up)*2.6,bz,0,0,d>0?up:Math.PI-up);   // boom, standing open
+        G.box(white,7.4,.02,.4,d*half,.012,z-d*2.2);G.box(M_(0x2fbf5a),.55,.55,.14,d*half,5.2,d*4.78);}
+      stamp(G,(gi[0]+go[0])/2,0,(gi[1]+go[1])/2,Math.atan2(-az,ax),1,true);}}
   // ship-to-shore cranes at the traced spots: boom down and working where a ship lies alongside, boom up where the berth is empty
   {const T2={},tpl=(up,load)=>T2[up+'/'+load]||(T2[up+'/'+load]=stsProp(0xe3a81c,0xb98a1a,up,load));let i=0;
     for(const [x,z,bx,bz] of SITES.sts){const tn=x*SITES.ts.nrm[0]+z*SITES.ts.nrm[1];if(tn<-1360)continue;   // the west quay's cranes work (traffic file)
@@ -2843,7 +2850,9 @@ const TS=(()=>{
   const s6i=RD.side(S6,L2),in6=s6i.slice(0,nearL(s6i,x6(LZ)+L2,LZ+2.3)+1),s6o=RD.side(RD.rev(S6),L2),out6=s6o.slice(nearL(s6o,x6(LZ)-L2,LZ-2.3));
   const xi=F.lm(...in6[in6.length-1])[0],xo=F.lm(...out6[0])[0],PINp=[[RD.sw(4),9],[in6,8],[run(xi,-70,LZ+2.3),9]],POUTp=[run(-70,xo,LZ-2.3),[out6,9],[RD.sw(14),8]];
   const TSin=RD.chain(...RD.WBTp,...PINp),TSout=RD.chain(...POUTp,[RD.S62,10],...RD.EBTp.slice(1));RD.pave([TSin,TSout],1.6);
-  const gateP=pt(2023-F.X1,637),iGate=RD.near(TSin,gateP),iOut=RD.near(TSout,RD.sim(...W14[W14.length-1])),portOutP=TSout[RD.near(TSout,pt(2008-F.X1,650))];
+  // at the port gate a truck stops with her cab beside the booth, which puts the point she is steered by some way short of it
+  const atBooth=(L,q)=>{const g=RD.sim(...q),i=RD.near(L,g),a=L[i-1],b=L[i+1],l=Math.hypot(b.x-a.x,b.z-a.z);return {x:g.x-(b.x-a.x)/l*7.6,z:g.z-(b.z-a.z)/l*7.6};};
+  const gateP=atBooth(TSin,TSG.in),gateO=atBooth(TSout,TSG.out),iGate=RD.near(TSin,gateP),iOut=RD.near(TSout,RD.sim(...W14[W14.length-1])),portOutP=TSout[RD.near(TSout,gateO)+3];
   const inside=(pts,R=3.4,self)=>{for(const o of T2.trucks){if(!o.active||o===self)continue;for(const q of o.body)for(const p of pts){const dx=q.x-p.x,dz=q.z-p.z;if(dx*dx+dz*dz<R*R)return true;}}return false;};
   const line=(x0,x1,z,n=8)=>{const o=[];for(let i=0;i<=n;i++)o.push({x:x0+(x1-x0)*i/n,z});return o;};
   const entry=line(-78,-44,LZ+2.3),inLast=RD.stretch(TSin,TSin.length-6,TSin.length-1),outUp=RD.stretch(TSout,0,10).concat(RD.stretch(TSin,RD.back(TSin,TSin.length-1,60),TSin.length-1));
@@ -2860,7 +2869,8 @@ const TS=(()=>{
     *fromGate(tr,E,onRoad){yield* T2.drive(tr,[E,{x:-OFF,z:LZ-2.3},{x:-70,z:LZ-2.3}],{thru:true,holds:[{p:{x:-52,z:LZ-2.3},near:12,ok:()=>!RD.busy(tr,outUp)&&!T2.trucks.some(o=>o!==tr&&o.active&&Math.abs(o.pos.z-(LZ-2.3))<1.5&&o.pos.x<tr.pos.x-1&&o.pos.x>-80)}]});
       TM.adopt(tr);tr.vmax=7.5;tr.status='In Tiên Sa port';
       const t2=RD.thru2(tr,TSout,30,34,1);
-      yield* drive(tr,TSout,{holds:[{p:TSout[RD.back(TSout,iOut,24)],near:4,ok:RD.NODEM.take(tr)}].concat(t2.holds),marks:[{p:portOutP,fn:()=>{tr.vmax=14.5;onRoad();}},{p:TSout[iOut+5],fn:RD.NODEM.drop(tr)}].concat(t2.marks)});
+      const g={p:gateO,near:1.5,ok:(q,st)=>{if(!st)return false;if(g.t0===undefined){g.t0=simT;tr.status='Port gate out';}if(simT-g.t0>2.5){tr.status='Leaving Tiên Sa port';return true;}return false;}};
+      yield* drive(tr,TSout,{holds:[g,{p:TSout[RD.back(TSout,iOut,24)],near:4,ok:RD.NODEM.take(tr)}].concat(t2.holds),marks:[{p:portOutP,fn:()=>{tr.vmax=14.5;onRoad();}},{p:TSout[iOut+5],fn:RD.NODEM.drop(tr)}].concat(t2.marks)});
       RD.free(tr);tr.vmax=8.2;}};
 
   // ---- the port's tugs and how a ship is handled ----
@@ -2930,6 +2940,7 @@ const TS=(()=>{
     for(const x of [V0-9,-8.5,8.5,V2+9])for(const z of [52.5,78.5]){B.cyl(steel,.28,28,x,14,z,0,0,0,8,.14);B.cyl(steel,.8,.3,x,28.1,z,0,0,0,10);for(const a of [0,1,2,3])B.box(lamp,.9,.22,.5,x+Math.cos(a*Math.PI/2)*1.1,27.8,z+Math.sin(a*Math.PI/2)*1.1,0,a*Math.PI/2,0);
       const s=F.w(x,z);LAMPS.push([s[0],28,s[1],2,0xffe9c4,0,46]);}
     for(const [x,z] of [[-OFF,GZ+15.6],[OFF,GZ+15.6],[-11,GZ],[-3,GZ],[3,GZ],[11,GZ],[-53,123]]){const s=F.w(x,z);LAMPS.push([s[0],x===-53?9.4:5.9,s[1],x===-53?0:1,0xffe2b0]);}
+    for(const q of [TSG.in,TSG.out]){const s=toSim(q[0],q[1]);LAMPS.push([s[0],5.7,s[1],1,0xffe2b0,0,9,9]);}   // under the port gate's roof, each with its pool of light on the road
     HOST.add(B.build());}
 
   const K={LQ,LS,HZ,ROADS,HDIR,VXS:VX,OFF,LANES:LN,GX0:QX0,GX1:QX1,GZ1:166,FENCE_Z:140,GATE_Z:GZ,GATE_IN:GZ+6.5,GATE_OUT:GZ-6.5,BOOM,NB:NBT,NR,BZ:-17.6,BACK:BK,BCX:BX,

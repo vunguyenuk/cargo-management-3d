@@ -18,7 +18,9 @@ const TS=(()=>{
   const s6i=RD.side(S6,L2),in6=s6i.slice(0,nearL(s6i,x6(LZ)+L2,LZ+2.3)+1),s6o=RD.side(RD.rev(S6),L2),out6=s6o.slice(nearL(s6o,x6(LZ)-L2,LZ-2.3));
   const xi=F.lm(...in6[in6.length-1])[0],xo=F.lm(...out6[0])[0],PINp=[[RD.sw(4),9],[in6,8],[run(xi,-70,LZ+2.3),9]],POUTp=[run(-70,xo,LZ-2.3),[out6,9],[RD.sw(14),8]];
   const TSin=RD.chain(...RD.WBTp,...PINp),TSout=RD.chain(...POUTp,[RD.S62,10],...RD.EBTp.slice(1));RD.pave([TSin,TSout],1.6);
-  const gateP=pt(2023-F.X1,637),iGate=RD.near(TSin,gateP),iOut=RD.near(TSout,RD.sim(...W14[W14.length-1])),portOutP=TSout[RD.near(TSout,pt(2008-F.X1,650))];
+  // at the port gate a truck stops with her cab beside the booth, which puts the point she is steered by some way short of it
+  const atBooth=(L,q)=>{const g=RD.sim(...q),i=RD.near(L,g),a=L[i-1],b=L[i+1],l=Math.hypot(b.x-a.x,b.z-a.z);return {x:g.x-(b.x-a.x)/l*7.6,z:g.z-(b.z-a.z)/l*7.6};};
+  const gateP=atBooth(TSin,TSG.in),gateO=atBooth(TSout,TSG.out),iGate=RD.near(TSin,gateP),iOut=RD.near(TSout,RD.sim(...W14[W14.length-1])),portOutP=TSout[RD.near(TSout,gateO)+3];
   const inside=(pts,R=3.4,self)=>{for(const o of T2.trucks){if(!o.active||o===self)continue;for(const q of o.body)for(const p of pts){const dx=q.x-p.x,dz=q.z-p.z;if(dx*dx+dz*dz<R*R)return true;}}return false;};
   const line=(x0,x1,z,n=8)=>{const o=[];for(let i=0;i<=n;i++)o.push({x:x0+(x1-x0)*i/n,z});return o;};
   const entry=line(-78,-44,LZ+2.3),inLast=RD.stretch(TSin,TSin.length-6,TSin.length-1),outUp=RD.stretch(TSout,0,10).concat(RD.stretch(TSin,RD.back(TSin,TSin.length-1,60),TSin.length-1));
@@ -35,7 +37,8 @@ const TS=(()=>{
     *fromGate(tr,E,onRoad){yield* T2.drive(tr,[E,{x:-OFF,z:LZ-2.3},{x:-70,z:LZ-2.3}],{thru:true,holds:[{p:{x:-52,z:LZ-2.3},near:12,ok:()=>!RD.busy(tr,outUp)&&!T2.trucks.some(o=>o!==tr&&o.active&&Math.abs(o.pos.z-(LZ-2.3))<1.5&&o.pos.x<tr.pos.x-1&&o.pos.x>-80)}]});
       TM.adopt(tr);tr.vmax=7.5;tr.status='In Tiên Sa port';
       const t2=RD.thru2(tr,TSout,30,34,1);
-      yield* drive(tr,TSout,{holds:[{p:TSout[RD.back(TSout,iOut,24)],near:4,ok:RD.NODEM.take(tr)}].concat(t2.holds),marks:[{p:portOutP,fn:()=>{tr.vmax=14.5;onRoad();}},{p:TSout[iOut+5],fn:RD.NODEM.drop(tr)}].concat(t2.marks)});
+      const g={p:gateO,near:1.5,ok:(q,st)=>{if(!st)return false;if(g.t0===undefined){g.t0=simT;tr.status='Port gate out';}if(simT-g.t0>2.5){tr.status='Leaving Tiên Sa port';return true;}return false;}};
+      yield* drive(tr,TSout,{holds:[g,{p:TSout[RD.back(TSout,iOut,24)],near:4,ok:RD.NODEM.take(tr)}].concat(t2.holds),marks:[{p:portOutP,fn:()=>{tr.vmax=14.5;onRoad();}},{p:TSout[iOut+5],fn:RD.NODEM.drop(tr)}].concat(t2.marks)});
       RD.free(tr);tr.vmax=8.2;}};
 
   // ---- the port's tugs and how a ship is handled ----
@@ -105,6 +108,7 @@ const TS=(()=>{
     for(const x of [V0-9,-8.5,8.5,V2+9])for(const z of [52.5,78.5]){B.cyl(steel,.28,28,x,14,z,0,0,0,8,.14);B.cyl(steel,.8,.3,x,28.1,z,0,0,0,10);for(const a of [0,1,2,3])B.box(lamp,.9,.22,.5,x+Math.cos(a*Math.PI/2)*1.1,27.8,z+Math.sin(a*Math.PI/2)*1.1,0,a*Math.PI/2,0);
       const s=F.w(x,z);LAMPS.push([s[0],28,s[1],2,0xffe9c4,0,46]);}
     for(const [x,z] of [[-OFF,GZ+15.6],[OFF,GZ+15.6],[-11,GZ],[-3,GZ],[3,GZ],[11,GZ],[-53,123]]){const s=F.w(x,z);LAMPS.push([s[0],x===-53?9.4:5.9,s[1],x===-53?0:1,0xffe2b0]);}
+    for(const q of [TSG.in,TSG.out]){const s=toSim(q[0],q[1]);LAMPS.push([s[0],5.7,s[1],1,0xffe2b0,0,9,9]);}   // under the port gate's roof, each with its pool of light on the road
     HOST.add(B.build());}
 
   const K={LQ,LS,HZ,ROADS,HDIR,VXS:VX,OFF,LANES:LN,GX0:QX0,GX1:QX1,GZ1:166,FENCE_Z:140,GATE_Z:GZ,GATE_IN:GZ+6.5,GATE_OUT:GZ-6.5,BOOM,NB:NBT,NR,BZ:-17.6,BACK:BK,BCX:BX,

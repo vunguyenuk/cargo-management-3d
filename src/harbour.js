@@ -32,6 +32,7 @@ const ROAD_S=[[-232,-956],[-130,-1005],[-40,-1052],[60,-1110],[170,-1190],[250,-
 const ROAD_X=ROAD_S.concat((()=>{const o=[];for(let u=90;u<TP.L+1;u+=(TP.L-90)/24)o.push(TP.at(Math.min(u,TP.L),0));o.push(TP.at(TP.L+90,0),TP.at(TP.L+200,0));return o;})());
 // Yết Kiêu itself carries on south-east past the Lê Đức Thọ junction towards the city: the way the hauliers come and go
 const ROAD_Y=[[-1207,-424],[-1262,-540],[-1330,-700],[-1420,-900],[-1500,-1110],[-1560,-1300]];
+const TSG={in:[2033.3,733.5],out:[2020.9,723.5]};   // Tiên Sa's port gate: where a truck stops at it on the way in and on the way out (points on ways 4 and 14)
 const HWX=MAP.hw.length;   // the ways added here: the Yết Kiêu stub, the road to Thuận Phước, its other carriageway's start, the merge
 MAP.hw.push(['T',...ROAD_Y.flat()],['P',...ROAD_S.flat()],['P',-236,-964,...ROAD_S[1]]);
 MAP.hw[5].splice(1,0,-1205.9,-426.8,-1196,-452);MAP.hw[52].push(-1205,-458,-1212.2,-430.9);   // Lê Đức Thọ's two carriageways carried round to meet Yết Kiêu
@@ -310,10 +311,16 @@ const GEO=[['Vũng Thùng',330,0,-330],['Vịnh Đà Nẵng',3050,0,260],['Bán 
     for(const d of [1768,1842,1905])truck(-1255,d,rr+(hrand()<.5?Math.PI:0));
     // reach stackers working the blocks behind the inner quay
     {const st=stackerProp();for(const [n,d,r] of [[-1158,2112,rr-Math.PI/2],[-1157,2204,rr-Math.PI/2],[-1190,2262,rr],[-1040,2150,rr+Math.PI/2]]){const [x,z]=P(n,d);if(!inPoly(port,x,z)||inFoot(x,z,3))continue;const Q=stamp(st.S,x,0,z,r);boxAt1(Q(...st.hang),r+Math.PI/2);}}
-    // gate on the port road: canopy, booths, lane islands
-    {const G=new Builder(),roofM=M_(0xe3a81c);G.box(M_(0xdedbd3),26,.3,8,0,6.6,0);G.box(roofM,26.4,.7,8.4,0,6.1,0);G.box(white,26.5,.2,8.5,0,5.75,0);for(const x of [-12,-4,4,12])G.box(white,.5,5.8,.5,x,2.9,0);
-      for(const x of [-4,4]){G.box(white,1.9,2.7,3.2,x,1.55,0);G.box(glass,1.95,1,3.25,x,2.05,0);G.box(roofM,2.3,.18,3.6,x,3,0);G.box(conc,2.5,.22,6,x,.11,0);}
-      stamp(G,2034,0,733,Math.atan2(95,-88)+Math.PI/2,1,true);}}
+    // gate on the port road, where the way in and the way out run side by side: one canopy across both, the booths on the island between them
+    // (each on its driver's left), a boom beyond each booth, a stop line under the roof
+    {const G=new Builder(),roofM=M_(0xe3a81c),red=M_(0xd0281f),gi=TSG.in,go=TSG.out,ax=go[0]-gi[0],az=go[1]-gi[1],half=Math.hypot(ax,az)/2,E=half+5.7,up=70*Math.PI/180;
+      G.box(M_(0xdedbd3),2*E+1.6,.3,9,0,6.75,0);G.box(roofM,2*E+2,.75,9.4,0,6.25,0);G.box(white,2*E+2.1,.2,9.5,0,5.88,0);
+      for(const x of [-E,-3.05,3.05,E])for(const z of [-3,3])G.box(white,.45,5.8,.45,x,2.9,z);
+      G.box(conc,6.5,.26,18,0,.13,0);for(const z of [-9.6,9.6])G.box(roofM,1.1,.9,1.1,0,.45,z);
+      for(const [x,z,d] of [[-1.95,1.4,-1],[1.95,-1.4,1]]){G.box(white,1.9,2.7,3.2,x,1.61,z);G.box(glass,1.95,1,3.25,x,2.12,z);G.box(roofM,2.3,.18,3.6,x,3.05,z);
+        const bz=z-d*5.4,bx=d*3;G.box(roofM,.34,1.1,.34,bx,.81,bz);G.box(red,5.2,.13,.13,bx+d*Math.cos(up)*2.6,1.3+Math.sin(up)*2.6,bz,0,0,d>0?up:Math.PI-up);   // boom, standing open
+        G.box(white,7.4,.02,.4,d*half,.012,z-d*2.2);G.box(M_(0x2fbf5a),.55,.55,.14,d*half,5.2,d*4.78);}
+      stamp(G,(gi[0]+go[0])/2,0,(gi[1]+go[1])/2,Math.atan2(-az,ax),1,true);}}
   // ship-to-shore cranes at the traced spots: boom down and working where a ship lies alongside, boom up where the berth is empty
   {const T2={},tpl=(up,load)=>T2[up+'/'+load]||(T2[up+'/'+load]=stsProp(0xe3a81c,0xb98a1a,up,load));let i=0;
     for(const [x,z,bx,bz] of SITES.sts){const tn=x*SITES.ts.nrm[0]+z*SITES.ts.nrm[1];if(tn<-1360)continue;   // the west quay's cranes work (traffic file)
