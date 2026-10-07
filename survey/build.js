@@ -10,6 +10,7 @@
 //   T x y r h colour              storage tank          O x y r colour      sphere
 //   Y x1 y1 x2 y2 w tiers         block of stacked containers lying along the centreline
 //   G kind x y x y ...            ground outline (conc sand lsand grass pitch court blue pool pond asph dark water houses)
+//   E kind x y x y ...            land the OpenStreetMap coastline leaves out (a spit, a causeway); kind is its surface, sand or grass
 //   V x1 y1 x2 y2 beam kind col   vessel, stern to bow
 //   P w [kind] x y ...            pier deck             M w x y ...  rock mound       D w x y ...  causeway
 //   W x y ...                     wall                  N x y r      clump of trees   n x y ...    row of trees
@@ -31,6 +32,7 @@ for(const f of fs.readdirSync(__dirname).filter(f=>f.endsWith('.txt')).sort()){
     else if(t==='O')out.push({t,p:pt(0),r:L(num(2)),col:n[3]||'white',src:f});
     else if(t==='Y')out.push({t,p:[...pt(0),...pt(2)],w:L(num(4)),tiers:num(5)||3,fill:n[6]===undefined?.85:+n[6],src:f});
     else if(t==='G')out.push({t,col:n[0],p:poly(1),src:f});
+    else if(t==='E')out.push({t,col:n[0],p:poly(1),src:f});
     else if(t==='V')out.push({t,p:[...pt(0),...pt(2)],w:L(num(4)),kind:n[5]||'cargo',col:n[6]||'',src:f});
     else if(t==='P'||t==='M'||t==='D')out.push({t,w:L(num(0)),p:poly(1),kind:n.find((v,i)=>i>0&&isNaN(+v))||'',src:f});
     else if(t==='W'||t==='n')out.push({t,p:poly(0),src:f});
@@ -65,6 +67,8 @@ L.push('// container blocks: boxes lie along the centreline; x1,z1,x2,z2,width,t
 L.push('stack:['+(by.Y||[]).map(o=>`[${P(o.p)},${R1(o.w)},${o.tiers}]`).join(',')+'],');
 L.push('// ground: kind, then the outline');
 L.push('ground:['+(by.G||[]).map(o=>`[${q(o.col)},${P(o.p)}]`).join(',')+'],');
+L.push('// land the mapped coastline leaves out (spits, causeways): kind, then the outline');
+L.push('land:['+(by.E||[]).map(o=>`[${q(o.col)},${P(o.p)}]`).join(',')+'],');
 L.push('// vessels stern to bow: x1,z1,x2,z2,beam,kind,colour');
 L.push('vessel:['+(by.V||[]).map(o=>`[${P(o.p)},${R1(o.w)},${q(o.kind)},${q(o.col)}]`).join(',')+'],');
 L.push('// decks, rock mounds, causeways: width, kind, centreline');

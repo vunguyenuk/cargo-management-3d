@@ -1,8 +1,16 @@
 
 /* ---------- camera ---------- */
 const VIEWS={all:{tx:20,tz:40,dist:520,az:.66,el:.63},b1:{tx:-62,tz:4,dist:215,el:.63},b2:{tx:62,tz:4,dist:215,el:.63},yard:{tx:0,tz:66,dist:300,el:.63},gate:{tx:8,tz:130,dist:175,el:.63},
-  bay:{tx:30,tz:60,dist:760,az:2.62,el:.085},west:{tx:10,tz:-10,dist:560,az:-1.75,el:.1},east:{tx:-60,tz:40,dist:620,az:1.6,el:.16},shore:{tx:900,tz:-300,dist:2600,az:3,el:.3},tugs:{tx:158,tz:24,dist:250,az:2.6,el:.4}};
-const view={tx:20,tz:40,dist:520,az:.66,el:.63},cur=Object.assign({},view);let W=1,H=1,narrow=1,shiftT=0,shiftC=0;
+  bay:{tx:30,tz:60,dist:760,az:2.62,el:.085},west:{tx:10,tz:-10,dist:560,az:-1.75,el:.1},east:{tx:-60,tz:40,dist:620,az:1.6,el:.16},shore:{tx:900,tz:-300,dist:2600,az:3,el:.3},tiensa:{tx:2030,tz:-440,dist:560,az:-2.2,el:.55},road:{tx:60,tz:215,dist:520,az:3.14,el:.62},bayeast:{tx:-700,tz:-330,dist:1500,az:2.95,el:.42},manquang:{tx:-1640,tz:-399,dist:340,az:-.9,el:.3},tugs:{tx:158,tz:24,dist:250,az:2.6,el:.4}};
+{const p=TSF.w(8,58);VIEWS.tiensa={tx:p[0],tz:p[1],dist:560,az:.66+TSF.rot,el:.63};}
+const view={tx:20,tz:40,dist:520,az:.66,el:.63},cur=Object.assign({},view);
+/* ---------- which terminal the panels are about ----------
+   U is the terminal whose figures, lists and modules are on show. Things that belong to a terminal other than the main one stand in that terminal's own
+   frame (e.F): wframe and wcenter give their place in the scene. */
+let U=TM;
+const wframe=e=>{const f=e.frame();if(e.F){const p=e.F.w(f.x,f.z);f.x=p[0];f.z=p[1];f.rot+=e.F.rot;}return f;};
+const wcenter=(e,v)=>{e.center(v);if(e.F)e.F.host.localToWorld(v);return v;};
+const homeTrucks=()=>{const o=[];for(const tm of TERMS)for(const t of tm.trucks)if(t.home===U&&t.active&&!t.amb)o.push(t);return o;};let W=1,H=1,narrow=1,shiftT=0,shiftC=0;
 function applyCam(){const ce=Math.cos(cur.el),d=cur.dist*narrow,fv=18+15*sstep(.46,.07,cur.el);if(Math.abs(fv-cam.fov)>.02){cam.fov=fv;cam.updateProjectionMatrix();}   // the lens opens up as the view drops to the horizon, so the sky comes into frame
   cam.position.set(cur.tx+d*Math.sin(cur.az)*ce,d*Math.sin(cur.el),cur.tz+d*Math.cos(cur.az)*ce);const gh=terrainS(cam.position.x,cam.position.z)+22;if(cam.position.y<gh)cam.position.y=gh;cam.lookAt(cur.tx,0,cur.tz);
   if(Math.abs(shiftC)>1)cam.setViewOffset(W,H,-shiftC,0,W,H);else if(cam.view)cam.clearViewOffset();
@@ -14,9 +22,9 @@ function setShift(){const w=$('#work');shiftT=(!w.hidden&&W>1100&&!app.classList
 const ray=new T.Raycaster(),ndc=new T.Vector2(),gp=new T.Plane(V(0,1,0),0);
 const groundAt=(cx,cy)=>{const r=canvas.getBoundingClientRect();ndc.set((cx-r.left)/r.width*2-1,-(cy-r.top)/r.height*2+1);ray.setFromCamera(ndc,cam);const p=V(0,0,0);return ray.ray.intersectPlane(gp,p)?p:null;};
 function pickAt(cx,cy){const r=canvas.getBoundingClientRect();ndc.set((cx-r.left)/r.width*2-1,-(cy-r.top)/r.height*2+1);ray.setFromCamera(ndc,cam);
-  const list=[CIM];for(const e of ents)if(e.group&&e.active!==false)list.push(e.group);
+  const list=TERMS.map(tm=>tm.CIM);for(const e of ents)if(e.group&&e.active!==false)list.push(e.group);
   const hits=ray.intersectObjects(list,true);
-  for(const h of hits){if(h.object===CIM){const b=boxAt[h.instanceId];if(b)return b;continue;}let o=h.object;while(o&&!o.userData.ent)o=o.parent;if(o)return o.userData.ent;}return null;}
+  for(const h of hits){const tm=TERMS.find(q=>q.CIM===h.object);if(tm){const b=tm.boxAt[h.instanceId];if(b)return b;continue;}let o=h.object;while(o&&!o.userData.ent)o=o.parent;if(o)return o.userData.ent;}return null;}
 const ptrs=new Map();let grab=null,moved=0,pinch=null,follow=false;
 const DMIN=70,DMAX=2600,ELMIN=.045,ELMAX=1.3;
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY,b:e.button,sh:e.shiftKey});moved=0;
@@ -27,16 +35,16 @@ canvas.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);
   const dx=e.clientX-p.x,dy=e.clientY-p.y;moved+=Math.abs(dx)+Math.abs(dy);p.x=e.clientX;p.y=e.clientY;
   if(ptrs.size===2&&pinch){const [a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y),an=Math.atan2(b.y-a.y,b.x-a.x);view.dist=clamp(pinch.dist*pinch.d/d,DMIN,DMAX);view.az=pinch.az-(an-pinch.a);return;}
   if(p.b===2||p.b===1||p.sh){view.az-=dx*.006;cur.az=view.az;view.el=clamp(view.el+dy*.004,ELMIN,ELMAX);cur.el=view.el;applyCam();return;}
-  if(grab&&moved>4){follow=false;const g=groundAt(e.clientX,e.clientY);if(g){view.tx=clamp(view.tx+grab.x-g.x,-1900,2500);view.tz=clamp(view.tz+grab.z-g.z,-2000,800);cur.tx=view.tx;cur.tz=view.tz;applyCam();}}});
+  if(grab&&moved>4){follow=false;const g=groundAt(e.clientX,e.clientY);if(g){view.tx=clamp(view.tx+grab.x-g.x,-2900,2700);view.tz=clamp(view.tz+grab.z-g.z,-3300,900);cur.tx=view.tx;cur.tz=view.tz;applyCam();}}});
 const up=e=>{const p=ptrs.get(e.pointerId);ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size){canvas.classList.remove('drag');if(p&&moved<6&&e.type==='pointerup'&&p.b===0)select(pickAt(e.clientX,e.clientY),false);}};
 canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('pointerleave',()=>{hoverAt=null;hov=null;});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 canvas.addEventListener('wheel',e=>{e.preventDefault();view.dist=clamp(view.dist*Math.exp(e.deltaY*.0012),DMIN,DMAX);},{passive:false});
 $('.ctl').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const c=b.dataset.c;
   if(c==='in')view.dist=clamp(view.dist*.75,DMIN,DMAX);else if(c==='out')view.dist=clamp(view.dist/.75,DMIN,DMAX);else if(c==='left')view.az+=Math.PI/6;else if(c==='right')view.az-=Math.PI/6;else if(c==='up')view.el=clamp(view.el+.16,ELMIN,ELMAX);else if(c==='down')view.el=clamp(view.el-.16,ELMIN,ELMAX);
-  else{follow=false;Object.assign(view,VIEWS.all);$('#view').value='all';}});
+  else{follow=false;const k=U===TM?'all':'tiensa';Object.assign(view,VIEWS[k]);$('#view').value=k;}});
 $('#view').addEventListener('change',e=>{follow=false;Object.assign(view,VIEWS[e.target.value]);});
-function flyTo(e){const f=e.frame();view.tx=f.x;view.tz=f.z;view.dist=e.kind==='vessel'?270:e.kind==='sts'?210:e.kind==='rtg'?175:125;}
+function flyTo(e){const f=wframe(e);view.tx=f.x;view.tz=f.z;view.dist=e.kind==='vessel'||e.L>100?(e.L>150?400:270):e.kind==='sts'?210:e.kind==='rtg'?175:125;}
 
 /* ---------- selection ---------- */
 let sel=null,hov=null,hoverAt=null,tracked=null,brk=null,yardSel=null;
@@ -46,18 +54,20 @@ function brackets(d){const [dx,dy,dz]=d,g=new T.Group(),B=new Builder(),L=clamp(
   const m=B.build(false);m.children.forEach(c=>{c.receiveShadow=false;c.renderOrder=20;});g.add(m);
   if(dy<6){const p=new T.Mesh(new T.PlaneGeometry(dx+1.2,dz+1.2),padMat);p.rotation.x=-Math.PI/2;p.position.y=-dy/2+.12;g.add(p);}
   return g;}
-function select(e,fly){sel=e&&!e.dead?e:null;if(brk){scene.remove(brk);brk.traverse(o=>{if(o.geometry)o.geometry.dispose();});brk=null;}
-  if(sel){const f=sel.frame();brk=brackets(f.d);scene.add(brk);if(sel.kind==='vessel')tracked=sel;else if(sel.berth&&sel.berth.vessel)tracked=sel.berth.vessel;
+function setTerm(tm,fly){if(U!==tm){U=tm;yardSel=null;if(tracked&&tracked.T!==tm)tracked=null;occ0=null;}$('#term').value=String(TERMS.indexOf(tm));if(fly){follow=false;const k=tm===TM?'all':'tiensa';Object.assign(view,VIEWS[k]);$('#view').value=k;}
+  if(mode==='cargo')cargoRefresh(true);modT=0;uiTick(true);}
+function select(e,fly){sel=e&&!e.dead?e:null;if(sel&&sel.T&&sel.T!==U)setTerm(sel.T,false);if(brk){scene.remove(brk);brk.traverse(o=>{if(o.geometry)o.geometry.dispose();});brk=null;}
+  if(sel){const f=wframe(sel);brk=brackets(f.d);scene.add(brk);if(sel.kind==='vessel')tracked=sel;else if(sel.berth&&sel.berth.vessel)tracked=sel.berth.vessel;
     if(sel.kind==='box'&&sel.where==='yard')yardSel=sel.ref;
     follow=!!fly&&(sel.kind==='truck'||sel.kind==='vessel'||sel.kind==='tug');if(fly)flyTo(sel);}
   else follow=false;
   app.classList.toggle('has-sel',!!sel);uiTick(true);}
 const tagBox=$('#tags'),mkTag=c=>{const d=document.createElement('div');d.className='tag '+c;d.hidden=true;tagBox.appendChild(d);return d;};
-const tagSel=mkTag('sel'),tagHov=mkTag('hov'),tagV=[mkTag('ves'),mkTag('ves')],_v=V(0,0,0);
+const tagSel=mkTag('sel'),tagHov=mkTag('hov'),allBerths=TERMS.flatMap(tm=>tm.berths),tagV=allBerths.map(()=>mkTag('ves')),_v=V(0,0,0);
 const geoTags=GEO.map(g=>{const d=mkTag('geo');d.textContent=g.t;return d;});
 // place names fade in once the view is wide or low enough to show the surroundings
 function syncGeo(){const on=cur.dist>430||cur.el<.42;GEO.forEach((g,i)=>{const el=geoTags[i];_v.set(g.x,g.y,g.z).project(cam);if(!on||_v.z>1||Math.abs(_v.x)>1.05||Math.abs(_v.y)>1.05){el.hidden=true;return;}el.hidden=false;el.style.transform=`translate(${((_v.x*.5+.5)*W).toFixed(1)}px,${((-_v.y*.5+.5)*H).toFixed(1)}px) translate(-50%,-50%)`;});}
-function place(el,e,html){if(!e){el.hidden=true;return;}e.center(_v).project(cam);if(_v.z>1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){el.hidden=true;return;}
+function place(el,e,html){if(!e){el.hidden=true;return;}wcenter(e,_v).project(cam);if(_v.z>1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){el.hidden=true;return;}
   el.hidden=false;if(el._h!==html){el._h=html;el.innerHTML=html;}el.style.transform=`translate(${((_v.x*.5+.5)*W).toFixed(1)}px,${((-_v.y*.5+.5)*H).toFixed(1)}px) translate(-50%,-100%)`;}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const statusOf=e=>e.kind==='box'?({yard:'In yard',ship:'On vessel',truck:'On truck',hook:'On hook'}[e.where]):e.status;
@@ -70,13 +80,13 @@ const IC={vessel:'<path d="M2.5 12.5l1.6 4h11.8l1.6-4M5 12.5V8h10v4.5M8 8V5h4v3M
 const svg=(k,c='i')=>`<svg class="${c}" viewBox="0 0 20 20">${IC[k]}</svg>`;
 const TONE={Discharging:'good',Loading:'good',Hoisting:'good',Lowering:'good',Stacking:'good','Loading truck':'good','Trolley out':'good','Trolley in':'good','Trolley travel':'good','Gantry travel':'sea',Rehandling:'warn',
   'Waiting for truck':'warn','Gate check':'warn','Gate out':'warn',Mooring:'warn',Berthing:'sea',Arriving:'sea',Departing:'sea',Inbound:'sea','Tugs made fast':'sea',Swinging:'sea',Unberthing:'sea','Awaiting tugs':'warn','Standing by':'idle','Standing off':'idle',Completed:'idle',Idle:'idle',Standby:'idle','Boom up':'idle','Lowering boom':'sea',
-  'In yard':'idle','On vessel':'sea','On truck':'good','On hook':'accent',Operational:'good',Cleared:'good',Pending:'warn',Inspection:'vio',Hold:'bad',Booked:'sea','At gate':'warn','In terminal':'good',Cancelled:'bad',Expected:'idle'};
-const tone=s=>TONE[s]||(/^Towing|^Pushing|^Pulling|^Alongside|^Escorting/.test(s)?'good':/patrol|Checking|Standing|^Proceeding|^Returning|^Waiting for MV/.test(s)?'sea':/^Under|^At RTG/.test(s)?'warn':/^To |Arriving|Leaving|Delivering|Collecting|Repositioning/.test(s)?'sea':'idle');
+  'In yard':'idle','On vessel':'sea','On truck':'good','On hook':'accent',Operational:'good',Cleared:'good',Pending:'warn',Inspection:'vio',Hold:'bad',Booked:'sea','At gate':'warn','In terminal':'good',Cancelled:'bad',Expected:'idle','On the road':'sea','At the stack':'warn'};
+const tone=s=>TONE[s]||(/^Towing|^Pushing|^Pulling|^Alongside|^Escorting/.test(s)?'good':/patrol|Checking|Standing|^Proceeding|^Returning|^Waiting for MV/.test(s)?'sea':/^Under|^At RTG/.test(s)?'warn':/^To |^On |^In |Arriving|Leaving|Delivering|Collecting|Repositioning/.test(s)?'sea':'idle');
 const pill=s=>`<span class="pill ${tone(s)}">${esc(s)}</span>`;
 const kv=rows=>'<dl class="kv">'+rows.map(([k,v,m])=>`<div><dt>${k}</dt><dd${m?' class="mono"':''}>${v}</dd></div>`).join('')+'</dl>';
 const head=(icon,eyebrow,title,sub,mono)=>`<div class="ihead"><div class="iicon">${svg(icon)}</div><div class="ititle"><small>${esc(eyebrow)}</small><b${mono?' class="mono"':''}>${esc(title)}</b><span>${esc(sub)}</span></div><div class="iact"><button data-a="locate" aria-label="Centre on this">${svg('locate')}</button><button data-a="follow" class="${follow?'on':''}" aria-label="Follow" aria-pressed="${follow}">${svg('follow')}</button><button data-a="close" aria-label="Close">${svg('close')}</button></div></div>`;
 const prog=(a,b,cls='')=>`<div class="prog"><div class="bar ${cls}"><i style="width:${b?Math.round(a/b*100):0}%"></i></div>${a}/${b}</div>`;
-const key=e=>e.kind==='box'?'b'+e.i:'e'+ents.indexOf(e),fromKey=k=>k[0]==='b'?boxAt[+k.slice(1)]:ents[+k.slice(1)];
+const key=e=>e.kind==='box'?'b'+TERMS.indexOf(e.T)+'.'+e.i:'e'+ents.indexOf(e),fromKey=k=>{if(k[0]!=='b')return ents[+k.slice(1)];const [a,b]=k.slice(1).split('.');return TERMS[+a].boxAt[+b];};
 const link=(e,txt)=>e&&!e.dead?`<a data-go="${key(e)}">${esc(txt||e.label)}</a>`:(e?esc(txt||e.label):'—');
 const dwellTxt=b=>{if(b.where!=='yard')return '—';const h=dwellH(b);return h>=24?`${Math.floor(h/24)} d ${Math.floor(h%24)} h`:`${Math.floor(h)} h`;};
 const locText=b=>{const r=b.ref;return b.where==='yard'?`${slotName(r)} · T${r.items.indexOf(b)+1}`:b.where==='ship'?r.name:r?r.id:'—';};
@@ -117,22 +127,23 @@ app.addEventListener('click',e=>{const mn=e.target.closest('[data-min]'),op=e.ta
   const g=e.target.closest('[data-go]');if(g&&g.dataset.go){go(g.dataset.go);}});
 
 /* ---------- inspector ---------- */
-function yardFigures(){let n=0,reef=0,hold=0,dg=0,dw=0;for(const b of blocks)for(const s of b.stacks)for(const x of s.items){n++;if(x.reefer)reef++;if(x.customs==='Hold'||x.customs==='Inspection')hold++;if(x.dg)dg++;dw+=dwellH(x);}return {n,reef,hold,dg,dw:n?dw/n:0};}
+function yardFigures(){let n=0,reef=0,hold=0,dg=0,dw=0;for(const b of U.blocks)for(const s of b.stacks)for(const x of s.items){n++;if(x.reefer)reef++;if(x.customs==='Hold'||x.customs==='Inspection')hold++;if(x.dg)dg++;dw+=dwellH(x);}return {n,reef,hold,dg,dw:n?dw/n:0};}
 function card(e){
-  if(!e){const occ=yard.count(),q=cranes.filter(c=>c.kind==='sts'),r=cranes.filter(c=>c.kind==='rtg');
-    return `<div class="ihead"><div class="iicon">${svg('terminal')}</div><div class="ititle"><small>Terminal · VCT</small><b>Vàm Chiều Terminal</b><span>2 berths · 4 quay cranes · 6 yard gantries · 2 tugs</span></div><div class="iact"><button  data-min="insp" aria-label="Hide terminal overview"><svg class="i" viewBox="0 0 20 20"><path d="M5 10h10"/></svg></button></div></div><div class="istat">${pill('Operational')}<span>${berths.filter(b=>b.vessel).length} of 2 berths occupied</span></div>`+
-    kv([['Yard stock',`${(occ*2).toLocaleString()} / ${(yard.cap*2).toLocaleString()} TEU`],['Quay cranes working',`${q.filter(c=>!c.idle).length} / ${q.length}`],['Yard gantries working',`${r.filter(c=>!c.idle).length} / ${r.length}`],['Trucks on site',trucks.filter(t=>t.active).length],['Weather',WXN[wx.name]+' · '+({clear:'visibility 10 km',cloudy:'visibility 8 km',rain:'visibility 2 km',fog:'visibility 400 m'})[wx.name]],['Wind',({clear:'W 9 kn',cloudy:'NW 13 kn',rain:'NE 18 kn',fog:'calm'})[wx.name]],['Tide','+1.8 m, rising'],['Sunrise · sunset','05:40 · 17:30']])+
-    '<div class="blocks">'+blocks.map(b=>{let n=0;for(const s of b.stacks)n+=s.items.length;const p=Math.round(n/b.cap*100);return `<div><s><i style="height:${p}%"></i></s><b>${b.name}</b>${p}%</div>`;}).join('')+'</div><p class="note">Click a vessel, tug, crane, truck or container to inspect it. Drag to pan, scroll to zoom, shift-drag to rotate and tilt.</p><p class="note">Site and surroundings laid out after Sơn Trà Port, Đà Nẵng. Map data © OpenStreetMap contributors. Operations and names are fictional.</p>';}
+  if(!e){const {yard,cranes,berths,blocks}=U,occ=yard.count(),q=cranes.filter(c=>c.kind==='sts'),r=cranes.filter(c=>c.kind==='rtg');
+    return `<div class="ihead"><div class="iicon">${svg('terminal')}</div><div class="ititle"><small>Terminal · ${U.K.code}</small><b>${esc(U.K.name)}</b><span>${berths.length} berth${berths.length>1?'s':''} · ${q.length} quay cranes · ${r.length} yard gantries · ${U.tugs.length} tugs</span></div><div class="iact"><button  data-min="insp" aria-label="Hide terminal overview"><svg class="i" viewBox="0 0 20 20"><path d="M5 10h10"/></svg></button></div></div><div class="istat">${pill('Operational')}<span>${berths.filter(b=>b.vessel).length} of ${berths.length} berth${berths.length>1?'s':''} occupied</span></div>`+
+    kv([['Yard stock',`${(occ*2).toLocaleString()} / ${(yard.cap*2).toLocaleString()} TEU`],['Quay cranes working',`${q.filter(c=>!c.idle).length} / ${q.length}`],['Yard gantries working',`${r.filter(c=>!c.idle).length} / ${r.length}`],['Trucks on site',homeTrucks().length],['Weather',WXN[wx.name]+' · '+({clear:'visibility 10 km',cloudy:'visibility 8 km',rain:'visibility 2 km',fog:'visibility 400 m'})[wx.name]],['Wind',({clear:'W 9 kn',cloudy:'NW 13 kn',rain:'NE 18 kn',fog:'calm'})[wx.name]],['Tide','+1.8 m, rising'],['Sunrise · sunset','05:40 · 17:30']])+
+    '<div class="blocks">'+blocks.map(b=>{let n=0;for(const s of b.stacks)n+=s.items.length;const p=Math.round(n/b.cap*100);return `<div><s><i style="height:${p}%"></i></s><b>${b.name}</b>${p}%</div>`;}).join('')+`</div><p class="note">Click a vessel, tug, crane, truck or container to inspect it. Drag to pan, scroll to zoom, shift-drag to rotate and tilt.</p><p class="note">${U===TM?'Site and surroundings laid out after Sơn Trà Port, Đà Nẵng.':'The west quay of Tiên Sa Port, Đà Nẵng, run as a terminal of its own.'} Map data © OpenStreetMap contributors. Operations and names are fictional.</p>`;}
   if(e.kind==='vessel'){const b=e.berth;return head('vessel','Vessel · '+b.name,e.name,`${e.imo} · voy. ${e.voy} · ${e.line.n}`)+`<div class="istat">${pill(e.status)}<span>${e.mode==='discharge'?'Import discharge':'Export loading'}</span></div>`+prog(e.done,e.planned)+
-    kv([['Line',esc(e.line.n)],['Length overall','172 m'],['Berth',b.name+' · starboard side to, bow out'],['Tugs',tugs.filter(t=>t.assist===e).map(t=>link(t)).join(' · ')||'—'],['Quay cranes',b.cranes.map(c=>link(c)).join(' · ')],['Arrived',clockAt(e.tArr),1],['Est. departure',clockAt(etdOf(e)),1],['Last move',e.last?link(e.last.box):'—',1]])+
+    kv([['Line',esc(e.line.n)],['Length · beam',`${e.cls.loa} · ${e.W.toFixed(1)} m`],['Capacity',e.cls.teu],['Berth',b.name+' · starboard side to, bow out'],['Tugs',e.T.tugs.filter(t=>t.assist===e).map(t=>link(t)).join(' · ')||'—'],['Quay cranes',b.cranes.map(c=>link(c)).join(' · ')],['Arrived',clockAt(e.tArr),1],['Est. departure',clockAt(etdOf(e)),1],['Last move',e.last?link(e.last.box):'—',1]])+
     `<div class="acts"><button class="btn" data-mod="vessels">Open bay plan</button></div>`;}
-  if(e.kind==='tug')return head('tug','Harbour tug · Tideline Towage',e.name,'ASD tug · 20 m · 30 t bollard pull')+`<div class="istat">${pill(e.status)}<span>${e.fast?'Line made fast':e.push?'Pushing':'No line out'}</span></div>`+
-    kv([['Assisting',e.assist&&!e.assist.dead?link(e.assist):'—'],['Speed',(e.spd*1.944/3).toFixed(1)+' kn',1],['Heading',Math.round((Math.atan2(-(.984*Math.cos(e.h)+.177*Math.sin(e.h)),.177*Math.cos(e.h)-.984*Math.sin(e.h))*180/Math.PI+360)%360)+'°',1],['Ship moves this session',e.jobs,1],['Berth','Tug pontoon, east cove']]);
+  if(e.kind==='tug')return head('tug','Harbour tug · '+e.owner,e.name,'ASD tug · 20 m · 30 t bollard pull')+`<div class="istat">${pill(e.status)}<span>${e.fast?'Line made fast':e.push?'Pushing':'No line out'}</span></div>`+
+    kv([['Assisting',e.assist&&!e.assist.dead?link(e.assist):'—'],['Speed',(e.spd*1.944/3).toFixed(1)+' kn',1],['Heading',Math.round((Math.atan2(-(.984*Math.cos(e.h)+.177*Math.sin(e.h)),.177*Math.cos(e.h)-.984*Math.sin(e.h))*180/Math.PI+360)%360)+'°',1],['Ship moves this session',e.jobs,1],['Berth',e.berthName]]);
   if(e.kind==='sts'){const v=e.berth.vessel;return head('sts','Quay crane · '+e.berth.name,e.id,'Ship-to-shore gantry · 16 rows outreach')+`<div class="istat">${pill(e.status)}<span>${e.cargo?'Laden':'Empty spreader'}</span></div>`+
     kv([['Vessel',link(v)],['Working bay',v?'Bay '+v.cols[Math.min(e.col,e.range[1])].bay:'—',1],['On hook',e.cargo?link(e.cargo):'—',1],['Truck in lane',e.atStop?link(e.atStop):'—',1],['Boom',e.boom<.02?'Down':e.boom>1.2?'Raised':'Moving'],['Hoist height',e.h.toFixed(1)+' m',1],['Moves this session',e.moves,1]]);}
   if(e.kind==='rtg'){let n=0;for(const s of e.blk.stacks)n+=s.items.length;const q=e.queue[0];return head('rtg','Yard gantry · Block '+e.blk.name,e.id,'Rubber-tyred gantry · 5 wide, 1 over 4')+`<div class="istat">${pill(e.status)}<span>${e.queue.length} job${e.queue.length===1?'':'s'} queued</span></div>`+prog(n,e.blk.cap,'accent')+
     kv([['Block fill',Math.round(n/e.blk.cap*100)+'%'],['On hook',e.cargo?link(e.cargo):'—',1],['Serving',q?(q.truck?link(q.truck):'Restow order'):'—',1],['Truck lane','Lane '+(e.blk.li+1)+' · westbound'],['Moves this session',e.moves,1]])+
     `<div class="acts"><button class="btn" data-mod="yard">Open yard planner</button></div>`;}
+  if(e.kind==='truck'&&e.sub==='car'&&e.amb)return head('truck','Road traffic · Đ. Yết Kiêu',e.plate,'Private car · not bound for the terminal')+`<div class="istat">${pill(e.status)}</div>`+kv([['Heading to',esc(e.dest)],['Speed',Math.round(e.v*3.6)+' km/h',1]]);
   if(e.kind==='truck'&&e.sub==='car')return head('truck','Service vehicle',e.id,'Operations patrol · 4×4 pickup')+`<div class="istat">${pill(e.status)}</div>`+kv([['Heading to',esc(e.dest)],['Speed',Math.round(e.v*3.6)+' km/h',1],['Laps this session',e.trips,1]]);
   if(e.kind==='truck'){const tt=e.sub==='tt';return head('truck',tt?'Terminal tractor · '+e.berth.name:'External haulier',e.id,tt?'Terminal fleet · 40′ skeletal trailer':e.haul+' · '+e.plate)+`<div class="istat">${pill(e.status)}<span>${e.cargo?'Laden':'Empty'}</span></div>`+
     kv([['Heading to',esc(e.dest)],['Cargo',e.cargo?link(e.cargo):'—',1],['Speed',Math.round(e.v*3.6)+' km/h',1],['Trips this session',e.trips,1],...(tt?[['Vessel',link(e.berth.vessel)]]:[['Booking',e.job],['Appointment',e.appt?e.appt.id:'—',1]])]);}
@@ -149,7 +160,7 @@ function act(a){const b=sel;if(!b||b.kind!=='box'||b.where!=='yard')return;const
   if(a==='release'){b.customs='Cleared';b.paint();ev('hold',`Hold released on ${b.id}`,b);toast(`${b.id} released. It can now be booked out.`);}
   else if(busy){toast('This stack is in the middle of another move. Try again in a moment.');return;}
   else if(a==='hold'){b.customs='Hold';b.paint();ev('hold',`Customs hold placed on ${b.id}`,b);toast(`Hold placed on ${b.id}.`);}
-  else if(a==='pickup'){st.rout++;const ap=mkAppt(true,b);b.appt=ap;const n=st.items.length-1-st.items.indexOf(b);ev('gate',`Pick-up ${ap.id} booked for ${b.id}`,b);toast(`Pick-up ${ap.id} booked. ${n?n+' container'+(n>1?'s':'')+' will be rehandled first.':'The next free truck will collect it.'}`);}
+  else if(a==='pickup'){st.rout++;const ap=b.T.mkAppt(true,b);b.appt=ap;const n=st.items.length-1-st.items.indexOf(b);ev('gate',`Pick-up ${ap.id} booked for ${b.id}`,b);toast(`Pick-up ${ap.id} booked. ${n?n+' container'+(n>1?'s':'')+' will be rehandled first.':'The next free truck will collect it.'}`);}
   else if(a==='restow'){if(!shiftTarget(st)){toast('No free slot in this block to restow into.');return;}st.rout++;st.blk.rtg.queue.push({type:'shift',stack:st,box:b,free:false});toast(`Restow order sent to ${st.blk.rtg.id}.`);}
   uiTick(true);if(mode==='cargo')cargoRefresh();}
 const inspEl=$('#insp'),trackEl=$('#tracker'),rowsEl=$('#rows'),tabsEl=$('#tabs');let tab='berths';
@@ -158,8 +169,8 @@ inspEl.addEventListener('click',e=>{const a=e.target.closest('[data-a]'),c=e.tar
   if(a.dataset.a==='close')select(null);else if(a.dataset.a==='locate'&&sel)flyTo(sel);else if(a.dataset.a==='follow'){follow=!follow;uiTick(true);}});
 tabsEl.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.t){tab=b.dataset.t;uiTick(true);}});
 function trackerHTML(){
-  let v=tracked&&!tracked.dead?tracked:null;if(!v)v=berths[0].vessel||berths[1].vessel;
-  if(!v)return `<div class="tr-main"><div class="tr-head">${svg('vessel')}<b>Vessel call</b><span>Both berths clear · next arrival inbound</span><button class="pmin" data-min="tracker" aria-label="Hide vessel call"><svg class="i" viewBox="0 0 20 20"><path d="M5 10h10"/></svg></button></div></div>`;
+  const berths=U.berths;let v=tracked&&!tracked.dead&&tracked.T===U?tracked:null;if(!v)v=(berths.find(b=>b.vessel)||{}).vessel;
+  if(!v)return `<div class="tr-main"><div class="tr-head">${svg('vessel')}<b>Vessel call</b><span>${berths.length>1?'Both berths':'Berth'} clear · next arrival inbound</span><button class="pmin" data-min="tracker" aria-label="Hide vessel call"><svg class="i" viewBox="0 0 20 20"><path d="M5 10h10"/></svg></button></div></div>`;
   const ord=['arrive','moor','work','done','depart'],idx=ord.indexOf(v.phase),verb=v.mode==='discharge'?'Discharging':'Loading',c=t=>t===undefined?'':clockAt(t);
   const st=[['Arrival','anchor',c(v.tArr)],['Berthed','flag',c(v.tBerth)],[idx>2?verb.replace('ing','ed'):verb,'box',idx>=2?v.done+'/'+v.planned+' · '+c(v.tWork):''],['Completed','check',c(v.tDone)||(idx===2?'est '+clockAt(etdOf(v)-8):'')],['Sailed','vessel',c(v.tDep)]];
   const l=v.last;
@@ -169,11 +180,12 @@ function trackerHTML(){
 }
 function rowsHTML(){
   const row=(e,sub,mid,st,right)=>`<button class="row ${sel===e?'on':''}" data-go="${key(e)}"><div><b>${esc(e.label.replace('MV ',''))}</b><small>${esc(sub)}</small></div><span>${mid}</span>${pill(st)}<em>${right}</em></button>`;
+  const {berths,cranes,stats}=U,tugs=U.tugs;
   if(tab==='berths')return berths.map(b=>b.vessel?row(b.vessel,b.name,esc(b.vessel.line.n),b.vessel.status,b.vessel.done+'/'+b.vessel.planned):`<div class="row"><div><b>${b.id}</b><small>${b.name}</small></div><span>Next: ${esc(b.next.name)} · ETA ${clockAt(b.nextAt)}</span>${pill('Idle')}<em></em></div>`).join('')+
     tugs.map(t=>row(t,'Harbour tug',t.assist&&!t.assist.dead?esc(t.assist.name):'Tug pontoon',t.status,(t.spd*1.944/3).toFixed(1)+' kn')).join('')+
     `<div class="row"><div><b>Gate</b><small>2 lanes</small></div><span>${stats.gateIn} external truck${stats.gateIn===1?'':'s'} on site</span>${pill('Operational')}<em></em></div>`;
   if(tab==='cranes')return cranes.map(c=>row(c,c.kind==='sts'?c.berth.name:'Block '+c.blk.name,c.cargo?`<span class="mono">${c.cargo.id}</span>`:c.kind==='rtg'&&c.queue.length?c.queue.length+' queued':'—',c.status,c.moves)).join('');
-  if(tab==='trucks')return trucks.filter(t=>t.active).map(t=>row(t,t.sub==='tt'?t.berth.name:t.sub==='car'?'Service':'Haulier',esc(t.dest),t.status,Math.round(t.v*3.6)+' km/h')).join('');
+  if(tab==='trucks')return homeTrucks().map(t=>row(t,t.sub==='tt'?t.berth.name:t.sub==='car'?'Service':'Haulier',esc(t.dest),t.status,Math.round(t.v*3.6)+' km/h')).join('');
   return events.slice(0,24).map(feedRow).join('')||'<div class="row ev"><b></b><span>No activity yet.</span></div>';
 }
 const feedRow=x=>`<button class="row ev" data-go="${x.ent&&!x.ent.dead?key(x.ent):''}"><b>${x.t}</b><span>${esc(x.text)}</span></button>`;
@@ -206,14 +218,14 @@ $('#wclose').addEventListener('click',()=>setMode('live'));
 const stat=(l,v,s)=>`<div class="stat"><small>${l}</small><b>${v}</b><em>${s}</em></div>`;
 /* yard planner */
 function yardHTML(){
-  const s=yardFigures(),cap=yard.cap;
+  const {yard,berths,blocks,stats}=U,NB=U.K.NB,NR=U.K.NR,s=yardFigures(),cap=yard.cap;
   let h=`<div class="stats">${stat('Occupancy',Math.round(s.n/cap*100)+'%',`${s.n*2} / ${cap*2} TEU`)}${stat('Free 40′ slots',cap-s.n,'across six blocks')}${stat('Reefers plugged',s.reef,'of 72 reefer points')}${stat('Customs holds',s.hold,'hold or inspection')}${stat('Average dwell',(s.dw/24).toFixed(1)+' d','target under 4 d')}${stat('Rehandles',stats.rehandles,'this session')}</div>`;
   h+=`<div class="quay"><span class="cap">Quay</span>`+berths.map(b=>{const v=b.vessel;return v?`<button class="qv" data-go="${key(v)}"><b>${b.id}</b><span>${esc(v.name)}</span>${pill(v.status)}<em>${v.done}/${v.planned}</em></button>`:`<div class="qv off"><b>${b.id}</b><span>Next: ${esc(b.next.name)} · ETA ${clockAt(b.nextAt)}</span></div>`;}).join('')+'</div><div class="ymap">';
   for(let li=0;li<3;li++)for(const hf of [0,3]){const b=blocks[hf+li],bi=hf+li;let n=0;for(const st of b.stacks)n+=st.items.length;const qn=b.rtg.queue.length;
-    h+=`<div class="blk"><div class="blk-h"><b>Block ${b.name}</b><span>${Math.round(n/b.cap*100)}% · ${n}/${b.cap}</span><button data-go="${key(b.rtg)}">${b.rtg.id} ${pill(b.rtg.status)}</button></div><div class="lane">← Lane ${li+1} · westbound${qn?` · ${qn} job${qn>1?'s':''} at gantry`:''}</div><div class="cells">`;
+    h+=`<div class="blk"><div class="blk-h"><b>Block ${b.name}</b><span>${Math.round(n/b.cap*100)}% · ${n}/${b.cap}</span><button data-go="${key(b.rtg)}">${b.rtg.id} ${pill(b.rtg.status)}</button></div><div class="lane">← Lane ${li+1} · westbound${qn?` · ${qn} job${qn>1?'s':''} at gantry`:''}</div><div class="cells" style="grid-template-columns:repeat(${NB},1fr)">`;
     for(let r=0;r<NR;r++)for(let c=0;c<NB;c++){const si=c*NR+r,st=b.stacks[si],k=st.items.length,hold=st.items.some(x=>x.customs==='Hold'||x.customs==='Inspection');
       h+=`<button class="c t${k}${st===yardSel?' on':''}${st.rin||st.rout?' lock':''}" data-st="${bi}.${si}" aria-label="Block ${b.name} bay ${c+1} row ${r+1}, ${k} high">${k||''}${hold?'<i></i>':''}</button>`;}
-    h+='</div><div class="bays">'+[1,2,3,4,5,6].map(x=>`<span>${pad2(x)}</span>`).join('')+'</div></div>';}
+    h+=`</div><div class="bays" style="grid-template-columns:repeat(${NB},1fr)">`+Array.from({length:NB},(q,x)=>`<span>${pad2(x+1)}</span>`).join('')+'</div></div>';}
   h+=`</div><div class="keyrow"><span><i style="background:#fbe1cf"></i>1 high</span><span><i style="background:#f5bf9b"></i>2</span><span><i style="background:#ea9460"></i>3</span><span><i style="background:#d4581f"></i>4 (full)</span><span><i style="background:repeating-linear-gradient(135deg,#bbb 0 3px,#eee 3px 6px)"></i>move in progress</span><span><i style="background:var(--bad);width:8px;height:8px;border-radius:50%"></i>hold in stack</span></div>`;
   const st=yardSel;
   if(!st)return h+'<div class="bay empty">Select a stack on the plan, or a container in the 3D view, to see its bay profile.</div>';
@@ -224,13 +236,13 @@ function yardHTML(){
     h+=`<small>Row ${r+1}${s2===st?' ◂':''}</small></div>`;}
   return h+'</div></div>';
 }
-wbody.addEventListener('click',e=>{const c=e.target.closest('[data-st]');if(!c)return;const [bi,si]=c.dataset.st.split('.').map(Number),st=blocks[bi].stacks[si];yardSel=st;const t=topOf(st);
-  if(t)select(t,true);else{select(null);yardSel=st;view.tx=st.x;view.tz=st.z;view.dist=140;uiTick(true);}});
+wbody.addEventListener('click',e=>{const c=e.target.closest('[data-st]');if(!c)return;const [bi,si]=c.dataset.st.split('.').map(Number),st=U.blocks[bi].stacks[si];yardSel=st;const t=topOf(st);
+  if(t)select(t,true);else{select(null);yardSel=st;const p=U.FR?U.FR.w(st.x,st.z):[st.x,st.z];view.tx=p[0];view.tz=p[1];view.dist=140;uiTick(true);}});
 /* cargo inventory */
 const CKEY={id:b=>b.id,type:b=>b.type,status:b=>statusOf(b),loc:b=>locText(b),commodity:b=>b.commodity,wt:b=>b.wt,pod:b=>b.pod,customs:b=>b.customs,dwell:b=>b.where==='yard'?dwellH(b):-1};
 function cargoRefresh(reset){
   const q=CG.q.trim().toLowerCase(),list=[];
-  for(const b of boxAt){if(!b)continue;
+  for(const b of U.boxAt){if(!b)continue;
     if(CG.loc!=='all'&&(CG.loc==='move'?(b.where!=='truck'&&b.where!=='hook'):b.where!==CG.loc))continue;
     if(CG.type!=='all'&&!(CG.type==='reefer'?b.reefer:CG.type==='dg'?b.dg:CG.type==='empty'?b.empty:(!b.reefer&&!b.dg&&!b.empty)))continue;
     if(CG.customs!=='all'&&b.customs!==CG.customs)continue;
@@ -243,7 +255,7 @@ function cargoRefresh(reset){
   const hd=[['id','Container'],['type','Type'],['status','Status'],['loc','Location'],['commodity','Commodity'],['wt','Gross t',1],['pod','Port of discharge'],['customs','Customs'],['dwell','Dwell',1]];
   setH($('#c-head'),hd.map(([k,l,n])=>`<button data-sort="${k}" class="${n?'num ':''}${CG.sort===k?'on':''}" aria-sort="${CG.sort===k?(CG.asc?'ascending':'descending'):'none'}">${l}${CG.sort===k?(CG.asc?' ↑':' ↓'):''}</button>`).join(''));
   $('#c-sizer').style.height=list.length*ROWH+'px';if(reset)$('#c-scroll').scrollTop=0;
-  setH($('#c-foot'),`${list.length.toLocaleString()} of ${boxAt.filter(Boolean).length.toLocaleString()} containers · click a row to locate it in the 3D view`);cargoRows();
+  setH($('#c-foot'),`${list.length.toLocaleString()} of ${U.boxAt.filter(Boolean).length.toLocaleString()} containers · click a row to locate it in the 3D view`);cargoRows();
 }
 function cargoRows(){const sc=$('#c-scroll');if(!sc)return;const a=Math.max(0,Math.floor(sc.scrollTop/ROWH)-3),b=Math.min(CG.list.length,a+Math.ceil((sc.clientHeight||420)/ROWH)+7),rows=$('#c-rows');rows.style.transform=`translateY(${a*ROWH}px)`;
   setH(rows,CG.list.slice(a,b).map(x=>`<button class="tr${x===sel?' on':''}" data-go="${key(x)}"><span class="mono">${x.id}<small>${esc(x.line.n)}</small></span><span>${x.type}</span><span>${pill(statusOf(x))}</span><span>${esc(locText(x))}</span><span>${esc(x.commodity)}${x.dg?` <span class="pill bad">${x.dg.cls}</span>`:''}</span><span class="num">${x.wt.toFixed(1)}</span><span>${x.pod}</span><span>${pill(x.customs)}</span><span class="num">${dwellTxt(x)}</span></button>`).join('')||'<div class="tfoot" style="border:0;background:none">No containers match these filters.</div>');}
@@ -253,30 +265,30 @@ function vesselsHTML(){
   let ticks='',grid='';for(let k=Math.ceil((B0+t0*6)/1800);k<=Math.floor((B0+t1*6)/1800);k++){const t=(k*1800-B0)/6,p=pos(t).toFixed(2);ticks+=`<span style="left:${p}%">${clockAt(t+.01)}</span>`;grid+=`<i style="left:${p}%"></i>`;}
   grid+=`<i class="now" style="left:${pos(simT).toFixed(2)}%"></i>`;
   const calls=[];let h=`<div class="sched"><div class="sc-axis">${ticks}</div>`;
-  for(const b of berths){const v=b.vessel;let bars='';
+  for(const b of allBerths){const v=b.vessel;let bars='';
     if(v){const a=pos(v.tArr),e=etdOf(v),w=Math.max(1,pos(e)-a);bars+=`<button class="sc-bar" data-go="${key(v)}" style="left:${a.toFixed(2)}%;width:${w.toFixed(2)}%"><u style="width:${Math.round(v.done/v.planned*100)}%"></u><span>${esc(v.name)} · ${v.mode==='discharge'?'discharge':'load'} ${v.done}/${v.planned}</span></button>`;
       calls.push([v,null,b,v.tArr,e]);}
-    const n=b.next,ns=v?etdOf(v)+80+ARRIVE_S:b.nextAt,ne=ns+60+n.planned*13.5;if(pos(ns)<99)bars+=`<div class="sc-bar next" style="left:${pos(ns).toFixed(2)}%;width:${Math.max(1,pos(ne)-pos(ns)).toFixed(2)}%"><span>${esc(n.name)} · ${n.mode==='discharge'?'discharge':'load'} ${n.planned}</span></div>`;
+    const n=b.next,ns=v?etdOf(v)+80+b.T.K.sea.arriveS():b.nextAt,ne=ns+60+n.planned*13.5;if(pos(ns)<99)bars+=`<div class="sc-bar next" style="left:${pos(ns).toFixed(2)}%;width:${Math.max(1,pos(ne)-pos(ns)).toFixed(2)}%"><span>${esc(n.name)} · ${n.mode==='discharge'?'discharge':'load'} ${n.planned}</span></div>`;
     calls.push([null,n,b,ns,ne]);
     h+=`<div class="sc-row"><b>${b.id}</b><div class="sc-lane">${grid}${bars}</div></div>`;}
   h+=`</div><div class="tbl simple" style="flex:none;min-height:0"><div class="tin" style="--cols:1.4fr 1.2fr .6fr .9fr .6fr .6fr .7fr .9fr;min-width:700px"><div class="thead">${['Vessel','Line','Berth','Operation','ATA / ETA','ETD','Moves','Status'].map((x,i)=>`<button class="${i===6?'num':''}" tabindex="-1">${x}</button>`).join('')}</div>`;
-  for(const [v,n,b,ts,te] of calls){const o=v||n;h+=`<${v?'button':'div'} class="tr"${v?` data-go="${key(v)}"`:''}><span class="mono">${esc(o.name)}<small>voy. ${o.voy}</small></span><span>${esc(o.line.n)}</span><span>${b.id}</span><span>${o.mode==='discharge'?'Discharge':'Load'}</span><span class="num">${clockAt(ts)}</span><span class="num">${clockAt(te)}</span><span class="num">${v?v.done+'/'+v.planned:'0/'+n.planned}</span><span>${pill(v?v.status:'Expected')}</span></${v?'button':'div'}>`;}
+  for(const [v,n,b,ts,te] of calls){const o=v||n;h+=`<${v?'button':'div'} class="tr"${v?` data-go="${key(v)}"`:''}><span class="mono">${esc(o.name)}<small>voy. ${o.voy}</small></span><span>${esc(o.line.n)}<small>${o.cls.loa} · ${o.cls.teu}</small></span><span>${b.id}<small>${b.T.K.short}</small></span><span>${o.mode==='discharge'?'Discharge':'Load'}</span><span class="num">${clockAt(ts)}</span><span class="num">${clockAt(te)}</span><span class="num">${v?v.done+'/'+v.planned:'0/'+n.planned}</span><span>${pill(v?v.status:'Expected')}</span></${v?'button':'div'}>`;}
   h+='</div></div>';
-  let v=tracked&&!tracked.dead?tracked:berths[0].vessel||berths[1].vessel;
+  let v=tracked&&!tracked.dead?tracked:(U.berths.find(b=>b.vessel)||allBerths.find(b=>b.vessel)||{}).vessel;
   if(!v)return h+'<div class="bay empty">No vessel alongside. The bay plan opens when the next call berths.</div>';
   h+=`<div class="bay"><div class="bay-h"><b>Bay plan · ${esc(v.name)}</b><span>Deck stow by bay, seen from astern · quay on the right · bow bays first</span></div><div class="bplan">`;
-  for(let ci=5;ci>=0;ci--){const cl=v.cols[ci],cr=v.berth.cranes.find(c=>!c.idle&&c.col===ci);let n=0;
-    let g='';for(let t=MAXT-1;t>=0;t--)for(let r=0;r<6;r++){const x=cl.stacks[r].items[t];if(x)n++;g+=x?`<button class="vb${x===sel?' on':''}" style="${boxCss(x)}" data-go="${key(x)}" title="${x.id}"></button>`:'<i class="vb none"></i>';}
-    h+=`<div class="vbay"><div class="vb-h"><b>Bay ${cl.bay}</b><span>${n}/24</span>${cr?pill(cr.id):ci===2||ci===3?'<span class="pill idle">Stays on board</span>':''}</div><div class="g">${g}</div></div>`;}
+  for(let ci=v.cols.length-1;ci>=0;ci--){const cl=v.cols[ci],cr=v.berth.cranes.find(c=>c.range&&!c.idle&&c.col===ci);let n=0;
+    let g='';for(let t=MAXT-1;t>=0;t--)for(let r=0;r<v.nr;r++){const x=cl.stacks[r].items[t];if(x)n++;g+=x?`<button class="vb${x===sel?' on':''}" style="${boxCss(x)}" data-go="${key(x)}" title="${x.id}"></button>`:'<i class="vb none"></i>';}
+    h+=`<div class="vbay"><div class="vb-h"><b>Bay ${cl.bay}</b><span>${n}/${v.nr*MAXT}</span>${cr?pill(cr.id):!v.served(ci)?'<span class="pill idle">Stays on board</span>':''}</div><div class="g" style="grid-template-columns:repeat(${v.nr},1fr)">${g}</div></div>`;}
   return h+'</div></div>';
 }
 /* gate */
 function gateHTML(){
-  const act2=appts.filter(a=>a.status==='At gate'||a.status==='In terminal'),bk=appts.filter(a=>a.status==='Booked').sort((a,b)=>(b.user-a.user)||a.t-b.t),dn=appts.filter(a=>a.status==='Completed'||a.status==='Cancelled').reverse();
+  const {appts,stats}=U,trucks=homeTrucks(),act2=appts.filter(a=>a.status==='At gate'||a.status==='In terminal'||a.status==='On the road'),bk=appts.filter(a=>a.status==='Booked').sort((a,b)=>(b.user-a.user)||a.t-b.t),dn=appts.filter(a=>a.status==='Completed'||a.status==='Cancelled').reverse();
   const avg=stats.turn.reduce((a,b)=>a+b,0)/stats.turn.length;
-  let h=`<div class="stats">${stat('Trucks on site',act2.length,'external hauliers')}${stat('Average turn',avg.toFixed(1)+' min','last '+stats.turn.length+' trucks')}${stat('Gate transactions',stats.gateDone,'this shift')}${stat('Booked ahead',bk.length,'appointments waiting')}${stat('In lane',trucks.filter(t=>t.active&&t.status==='Gate check').length,'at the in-gate now')}${stat('Out lane',trucks.filter(t=>t.active&&t.status==='Gate out').length,'at the out-gate now')}</div>`;
+  let h=`<div class="stats">${stat('Trucks on site',act2.length,'external hauliers')}${stat('Average turn',avg.toFixed(1)+' min','last '+stats.turn.length+' trucks')}${stat('Gate transactions',stats.gateDone,'this shift')}${stat('Booked ahead',bk.length,'appointments waiting')}${stat('In lane',trucks.filter(t=>t.status==='Gate check').length,'at the in-gate now')}${stat('Out lane',trucks.filter(t=>t.status==='Gate out').length,'at the out-gate now')}</div>`;
   h+=`<div class="tbl simple"><div class="tin" style="--cols:.8fr 1.3fr 1fr 1.25fr .9fr .9fr .6fr;min-width:700px"><div class="thead">${['Appointment','Haulier','Type','Container','Window','Status','Turn'].map((x,i)=>`<button class="${i===6?'num':''}" tabindex="-1">${x}</button>`).join('')}</div><div class="tscroll">`;
-  for(const a of [...act2,...bk,...dn]){const live=a.truck&&a.truck.active&&a.truck.appt===a&&(a.status==='At gate'||a.status==='In terminal'),tgt=live?a.truck:(a.box&&!a.box.dead?a.box:null);
+  for(const a of [...act2,...bk,...dn]){const live=a.truck&&a.truck.active&&a.truck.appt===a&&(a.status==='At gate'||a.status==='In terminal'||a.status==='On the road'),tgt=live?a.truck:(a.box&&!a.box.dead?a.box:null);
     h+=`<${tgt?'button':'div'} class="tr"${tgt?` data-go="${key(tgt)}"`:''}><span class="mono">${a.id}${a.user?'<small>Booked by you</small>':''}</span><span>${esc(a.haul)}<small>${a.plate}</small></span><span>${a.type}</span><span class="mono">${a.box?a.box.id:'<span style="color:var(--ink-3);font-family:var(--f-body)">Assigned at gate</span>'}</span><span class="num" style="text-align:left">${clockAt(a.t)}–${clockAt(a.t+100)}</span><span>${pill(a.status)}</span><span class="num">${a.turn?a.turn.toFixed(1)+' min':'—'}</span></${tgt?'button':'div'}>`;}
   return h+`</div><div class="tfoot">To book a truck for a specific container, select it and choose “Book truck pick-up”.</div></div></div>`;
 }
@@ -291,16 +303,16 @@ function uiTick(force){
   const bn=$('#bellN');bn.hidden=!unread;bn.textContent=unread>9?'9+':unread;
   if(!$('#feed').hidden)setH($('#feed'),events.slice(0,12).map(x=>`<button data-go="${x.ent&&!x.ent.dead?key(x.ent):''}"><b>${x.t}</b><span>${esc(x.text)}</span></button>`).join('')||'<button disabled>No activity yet.</button>');
   const lg=$('#legend');lg.hidden=colorBy==='natural';if(colorBy!=='natural')setH(lg,`<span class="cap">${$('#colorby').selectedOptions[0].textContent}</span>`+LEGEND[colorBy].map(([l,h])=>`<span><i style="background:${hexCss(h)}"></i>${l}</span>`).join(''));
-  if(mode==='live'){
+  if(mode==='live'){const {yard,stats,cranes,berths}=U;
     const occ=yard.count();if(occ0===null)occ0=occ;const d=(occ-occ0)*2;
     setH($('#k1'),Math.round(occ/yard.cap*100)+'<u>%</u>'+(d?`<span class="d">${d>0?'+':''}${d}</span>`:''));$('#k1s').textContent=`${(occ*2).toLocaleString()} / ${(yard.cap*2).toLocaleString()} TEU`;
     while(stats.moves.length&&stats.moves[0]<simT-200)stats.moves.shift();
-    setH($('#k2'),(stats.moves.length/4*3).toFixed(1)+'<u>moves/h</u>');$('#k2s').textContent=`per crane · ${stats.total} lifts this shift`;
+    setH($('#k2'),(stats.moves.length/U.K.cranes.filter(c=>c.park===undefined||c.park!==c.g).length*3).toFixed(1)+'<u>moves/h</u>');$('#k2s').textContent=`per crane · ${stats.total} lifts this shift`;
     const tt=stats.turn.reduce((a,b)=>a+b,0)/stats.turn.length;setH($('#k3'),tt.toFixed(1)+'<u>min</u>');$('#k3s').textContent=`last ${stats.turn.length} hauliers · gate to gate`;
     const yf=yardFigures();setH($('#k4'),yf.hold+'<u>boxes</u>');$('#k4s').textContent=`${yf.reef} reefers · ${yf.dg} dangerous goods`;
     setH(trackEl,trackerHTML());
     const q=cranes.filter(c=>!c.idle).length;
-    setH(tabsEl,[['berths','Berths',berths.filter(b=>b.vessel).length+'/2'],['cranes','Cranes',q+'/'+cranes.length],['trucks','Trucks',trucks.filter(t=>t.active).length],['feed','Activity',events.length]].map(([k,n,c])=>`<button role="tab" data-t="${k}" aria-selected="${tab===k}" class="${tab===k?'on':''}">${n}<u>${c}</u></button>`).join('')+'<button class="pmin" data-min="lists" aria-label="Hide equipment and activity"><svg class="i" viewBox="0 0 20 20"><path d="M5 10h10"/></svg></button>');
+    setH(tabsEl,[['berths','Berths',berths.filter(b=>b.vessel).length+'/'+berths.length],['cranes','Cranes',q+'/'+cranes.length],['trucks','Trucks',homeTrucks().length],['feed','Activity',events.length]].map(([k,n,c])=>`<button role="tab" data-t="${k}" aria-selected="${tab===k}" class="${tab===k?'on':''}">${n}<u>${c}</u></button>`).join('')+'<button class="pmin" data-min="lists" aria-label="Hide equipment and activity"><svg class="i" viewBox="0 0 20 20"><path d="M5 10h10"/></svg></button>');
     setH(rowsEl,rowsHTML());
   }else if(force||now-modT>(mode==='cargo'?1500:600)){modT=now;
     if(mode==='yard')setH($('#m-all'),yardHTML());else if(mode==='vessels')setH($('#m-all'),vesselsHTML());else if(mode==='gate')setH($('#m-all'),gateHTML());else if(mode==='cargo')cargoRefresh(false);}
@@ -309,7 +321,7 @@ function uiTick(force){
 const qEl=$('#q'),resEl=$('#results');
 function search(){const s=qEl.value.trim().toLowerCase().replace(/\s+/g,'');if(!s){resEl.hidden=true;return;}const out=[];
   for(const e of ents){if(e.active===false)continue;if((e.label+' '+(e.line?e.line.n:'')).toLowerCase().replace(/\s+/g,'').includes(s))out.push(e);if(out.length>=6)break;}
-  if(out.length<6)for(const b of boxAt){if(b&&b.id.toLowerCase().replace(/\s+/g,'').includes(s)){out.push(b);if(out.length>=6)break;}}
+  if(out.length<6)for(const tm of TERMS)for(const b of tm.boxAt){if(b&&b.id.toLowerCase().replace(/\s+/g,'').includes(s)){out.push(b);if(out.length>=6)break;}}
   resEl._list=out;resEl.innerHTML=out.length?out.map((e,i)=>`<button data-i="${i}">${svg(e.kind)}<b class="mono">${esc(e.label)}</b><small>${esc(statusOf(e))}</small></button>`).join(''):'<button disabled>No match. Try QC-02, TT-07 or a container number.</button>';resEl.hidden=false;}
 qEl.addEventListener('input',search);qEl.addEventListener('focus',search);
 qEl.addEventListener('keydown',e=>{if(e.key==='Escape'){qEl.blur();resEl.hidden=true;}if(e.key==='Enter'&&resEl._list&&resEl._list[0]){select(resEl._list[0],true);resEl.hidden=true;qEl.blur();}});
@@ -317,7 +329,7 @@ resEl.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-i]');if
 qEl.addEventListener('blur',()=>setTimeout(()=>{resEl.hidden=true;},120));
 $('#bell').addEventListener('click',()=>{const f=$('#feed');f.hidden=!f.hidden;$('#pmenu').hidden=true;$('#skymenu').hidden=true;unread=0;uiTick(true);});
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('.bell')){$('#feed').hidden=true;$('#pmenu').hidden=true;$('#skymenu').hidden=true;}});
-$('#colorby').addEventListener('change',e=>{colorBy=e.target.value;repaintAll();modT=0;uiTick(true);});
+$('#colorby').addEventListener('change',e=>{colorBy=e.target.value;for(const tm of TERMS)tm.repaintAll();modT=0;uiTick(true);});
 addEventListener('keydown',e=>{const tg=e.target.tagName;if(e.key==='/'&&tg!=='INPUT'){e.preventDefault();qEl.focus();}else if((e.key==='h'||e.key==='H')&&tg!=='INPUT'&&tg!=='SELECT'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const hide=!HID.has('all');setPanel('all',!hide);if(hide)toast('Panels hidden. Press H or use the panels button to bring them back.');}
   else if(e.key==='Escape'&&tg!=='INPUT'){if(HID.has('all'))setPanel('all',true);else if(sel)select(null);else if(mode!=='live')setMode('live');}});
 let speed=1;document.querySelector('.speed').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;speed=+b.dataset.sp;[...b.parentNode.children].forEach(x=>x.classList.toggle('on',x===b));$('#live').classList.toggle('paused',!speed);$('#live span').textContent=speed?'Live':'Paused';});
@@ -331,25 +343,24 @@ let last=performance.now(),hovT=0,dwT=0,fN=0,fT=0;
 function frame(now){
   requestAnimationFrame(frame);
   if(++fN>30&&fN<=120){fT+=now-last;if(fN===120&&fT/90>30&&pxr>Math.max(1,Math.min(DPR,2))){pxr=Math.max(1,Math.min(DPR,2));renderer.setPixelRatio(pxr);resize();}}
-  const rdt=Math.min(.1,(now-last)/1000);last=now;let rem=rdt*speed;while(rem>1e-6){const d=Math.min(1/30,rem);step(d);rem-=d;}
+  // the first frame can carry a time from before the scene was built, so the step is never allowed to be negative
+  const rdt=clamp((now-last)/1000,0,.1);last=now;let rem=rdt*speed;while(rem>1e-6){const d=Math.min(1/30,rem);step(d);rem-=d;}
   uT.value+=rdt*(speed?1:.25);
-  for(const c of cranes){c.sync();if(c.kind==='sts')syncBoom(c);}
-  for(const t of trucks)t.sync();
-  for(const p of peds)p.sync(rdt);
+  for(const tm of TERMS){for(const c of tm.cranes){c.sync();if(c.kind==='sts')syncBoom(c);}for(const t of tm.trucks)t.sync();for(const p of tm.peds)p.sync(rdt);}
   syncHarbour();
-  if(colorBy==='dwell'&&now-dwT>20000){dwT=now;repaintAll();}
-  if(dirtyC){CIM.instanceMatrix.needsUpdate=true;dirtyC=false;}
-  if(sel&&follow){const f=sel.frame();view.tx=f.x;view.tz=f.z;}
+  if(colorBy==='dwell'&&now-dwT>20000){dwT=now;for(const tm of TERMS)tm.repaintAll();}
+  if(sel&&follow){const f=wframe(sel);view.tx=f.x;view.tz=f.z;}
   const k=1-Math.exp(-rdt*8);for(const key2 in view)cur[key2]=lerp(cur[key2],view[key2],k);shiftC=lerp(shiftC,shiftT,k);applyCam();shadowFit();
-  if(sel&&brk){const f=sel.frame();brk.position.set(f.x,f.y,f.z);brk.rotation.y=f.rot;}
+  if(sel&&brk){const f=wframe(sel);brk.position.set(f.x,f.y,f.z);brk.rotation.y=f.rot;}
   if(hoverAt&&!ptrs.size&&now-hovT>70){hovT=now;hov=pickAt(hoverAt[0],hoverAt[1]);canvas.classList.toggle('hot',!!hov);}
   place(tagSel,sel,sel?`${esc(sel.label)}<span>${esc(statusOf(sel))}</span>`:'');
   place(tagHov,hov&&hov!==sel&&hov.kind!=='vessel'?hov:null,hov?esc(hov.label):'');
-  berths.forEach((b,i)=>place(tagV[i],b.vessel&&b.vessel!==sel?b.vessel:null,b.vessel?`${esc(b.vessel.name)}<span>${esc(b.vessel.status)}${b.vessel.phase==='work'?' '+b.vessel.done+'/'+b.vessel.planned:''}</span>`:''));
+  allBerths.forEach((b,i)=>place(tagV[i],b.vessel&&b.vessel!==sel?b.vessel:null,b.vessel?`${esc(b.vessel.name)}<span>${esc(b.vessel.status)}${b.vessel.phase==='work'?' '+b.vessel.done+'/'+b.vessel.planned:''}</span>`:''));
   skyTick(rdt);syncGeo();
   uiTick(false);renderer.render(scene,cam);
 }
 new ResizeObserver(resize).observe(app);resize();applyPanels();initNight();
 for(let i=0;i<1500;i++)step(.05);
+$('#term').addEventListener('change',e=>setTerm(TERMS[+e.target.value],true));
 uiTick(true);requestAnimationFrame(frame);
 

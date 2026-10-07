@@ -77,8 +77,24 @@ const skyDome=new T.Mesh(new T.SphereGeometry(4200,40,20),skyMat);skyDome.render
 scene.background=null;
 
 /* flood lights for the night shift */
-// the floods exist only after dark: a light that is switched off still costs every pixel, so they are removed by day
-const FLOODS=[[-62,34,12],[62,34,12],[-62,36,70],[62,36,70],[0,32,118]].map(([x,y,z])=>{const l=new T.PointLight(col(0xffd9a0),0,215,1.6);l.position.set(x,y,z);l.visible=false;scene.add(l);return l;});let floodsOn=false;
+// the floods exist only after dark: a light that is switched off still costs every pixel, so they are removed by day. Real lights are dear, so
+// there are six in all: they stand at whichever floodlit places (FSITES: the terminal's masts, every high mast along the shore) are nearest
+// the middle of the view, and fade out and in as they change places. Everything else that is lit is drawn: a glow at the lamp, a pool on the ground
+const FSITES=[[-62,34,12],[62,34,12],[-62,36,70],[62,36,70],[0,32,118]].map(([x,y,z])=>({x,y,z,k:1}));
+const FLOODS=[0,1,2,3,4,5].map(()=>{const l=new T.PointLight(col(0xffd9a0),0,215,1.6);l.visible=false;l.site=null;l.k=0;l.keep=false;scene.add(l);return l;});let floodsOn=false,floodT=0;
+function floodFollow(dt,night){floodT-=dt;
+  if(floodT<=0){floodT=.3;const tx=cur.tx,tz=cur.tz;for(const f of FSITES)f.d=(f.x-tx)*(f.x-tx)+(f.z-tz)*(f.z-tz);const want=FSITES.slice().sort((a,b)=>a.d-b.d).slice(0,FLOODS.length);
+    for(const l of FLOODS)l.keep=want.includes(l.site);const free=want.filter(f=>!FLOODS.some(l=>l.site===f));
+    for(const l of FLOODS)if(!l.keep&&l.k<.002&&free.length){l.site=free.shift();l.position.set(l.site.x,l.site.y,l.site.z);l.keep=true;}}
+  for(const l of FLOODS){l.k=clamp(l.k+(l.keep?dt:-dt)*2.4,0,1);l.intensity=l.site?1.35*night*l.k*l.site.k:0;}}
+// the pool of light a lamp throws on the ground under it: one mesh of flat patches for all of them, laid on after dark
+const poolMat=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.35,'rgba(255,255,255,.62)');gr.addColorStop(.7,'rgba(255,255,255,.18)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);
+  return new T.MeshBasicMaterial({map:new T.CanvasTexture(c),vertexColors:true,blending:T.AdditiveBlending,transparent:true,depthWrite:false,toneMapped:false,opacity:0,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});})();
+function lightPools(){const p=[],u=[],c=[],k=new T.Color();
+  for(const l of LAMPS){if(!l[6])continue;const ra=l[6],rl=l[7]||ra,a=l[8]===undefined?0:l[8]+SITE.rot,ax=Math.cos(a)*rl,az=-Math.sin(a)*rl,bx=Math.sin(a)*ra,bz=Math.cos(a)*ra,y=l[5]+.07,x=l[0],z=l[2],q=[[-1,-1],[1,-1],[-1,1],[1,-1],[1,1],[-1,1]];
+    k.set(l[4]).convertSRGBToLinear().multiplyScalar(l[3]===2?.17:.3);for(const [s,t] of q){p.push(x+ax*s+bx*t,y,z+az*s+bz*t);u.push((s+1)/2,(t+1)/2);c.push(k.r,k.g,k.b);}}
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setAttribute('uv',new T.Float32BufferAttribute(u,2));g.setAttribute('color',new T.Float32BufferAttribute(c,3));
+  const m=new T.Mesh(g,poolMat);m.frustumCulled=false;m.raycast=()=>{};m.visible=false;m.renderOrder=4;nightObjs.push(m);scene.add(m);}
 const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.18,'rgba(255,255,255,.75)');gr.addColorStop(.45,'rgba(255,255,255,.2)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);return new T.CanvasTexture(c);})();
 const glowMats=[5,11,24].map(s=>new T.PointsMaterial({map:glowTex,size:s,sizeAttenuation:true,vertexColors:true,blending:T.AdditiveBlending,depthWrite:false,transparent:true,fog:false,toneMapped:false,opacity:0}));
 const nightObjs=[];
@@ -87,9 +103,11 @@ function glowPts(list,size=0){const p=[],c=[],k=new T.Color();for(const [x,y,z,h
   const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setAttribute('color',new T.Float32BufferAttribute(c,3));
   const m=new T.Points(g,glowMats[size]);m.frustumCulled=false;m.raycast=()=>{};m.visible=false;m.renderOrder=6;nightObjs.push(m);return m;}
 function initNight(){
+  for(const l of LAMPS)if(l[3]===2&&l[6]>30)FSITES.push({x:l[0],y:l[1]+3,z:l[2],k:.95});
+  lightPools();
   for(let s=0;s<3;s++){const l=LAMPS.filter(a=>a[3]===s).map(a=>[a[0],a[1],a[2],a[4]]);if(l.length)scene.add(glowPts(l,s));}
-  for(const c of cranes){c.group.add(glowPts(c.lampPts.map(p=>[...p,0xffe9c4]),c.kind==='sts'?2:1));if(c.kind==='sts'){c.pivot.add(glowPts(c.boomLamps.map(p=>[...p,0xffe9c4]),2));c.group.add(glowPts([[0,46,6.5,0xff5040]],1));}}
-  for(const t of trucks){const f=t.sub==='car'?2.3:(t.wb||3)+1.45,host=t.tractor||t.group;host.add(glowPts([[f,1,.85,0xfff3d6],[f,1,-.85,0xfff3d6]],0));
+  for(const tm of TERMS)for(const c of tm.cranes){c.group.add(glowPts(c.lampPts.map(p=>[...p,0xffe9c4]),c.kind==='sts'?2:1));if(c.kind==='sts'){c.pivot.add(glowPts(c.boomLamps.map(p=>[...p,0xffe9c4]),2));c.group.add(glowPts([[0,46,6.5,0xff5040]],1));}}
+  for(const tm of TERMS)for(const t of tm.trucks){const f=t.sub==='car'?2.3:(t.wb||3)+1.45,host=t.tractor||t.group;host.add(glowPts([[f,1,.85,0xfff3d6],[f,1,-.85,0xfff3d6]],0));
     if(t.trailer)t.trailer.add(glowPts([[-6.2,1.1,.9,0xff3020],[-6.2,1.1,-.9,0xff3020]],0));else host.add(glowPts([[-2.3,.9,.7,0xff3020],[-2.3,.9,-.7,0xff3020]],0));}
 }
 const nmat={lamp:M_(0xfff0c8,{emissive:0xffc978,emissiveIntensity:1}),glass:M_(0x1f3640,{roughness:.2,metalness:.2}),vl:VM(0xfff3d6,{emissive:0xffd9a0,emissiveIntensity:1.4}),vr:VM(0xc0221a,{emissive:0x8a120c,emissiveIntensity:.9})};
@@ -147,7 +165,7 @@ function skyTick(rdt){
   // night shift: floods, lamp heads, windows, vehicle lamps, glows
   const lit=clamp(Math.max(night,rainA*.55,mist*.6,grey*.25),0,1);
   if(floodsOn?night<.02:night>.06){floodsOn=!floodsOn;for(const f of FLOODS)f.visible=floodsOn;}
-  for(const f of FLOODS)f.intensity=1.35*night;
+  floodFollow(sky.first?9:rdt,night);poolMat.opacity=clamp(night*1.15,0,1);
   nmat.lamp.emissiveIntensity=1+2.6*lit;nmat.glass.emissiveIntensity=.75*night;nmat.vl.emissiveIntensity=1.4+2.4*lit;nmat.vr.emissiveIntensity=.9+1.6*lit;
   const go=clamp(lit*1.15,0,1)*(1+.35*mist);for(let i=0;i<3;i++){glowMats[i].opacity=Math.min(1,go);glowMats[i].size=[5,11,24][i]*(1+.6*mist+.25*rainA);}
   const on=go>.03;for(const o of nightObjs)o.visible=on;

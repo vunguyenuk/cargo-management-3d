@@ -325,6 +325,7 @@ button.row:hover{background:var(--sunken)}
 .pmenu kbd{margin-left:auto;font:500 10.5px var(--f-mono);border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--ink-3)}
 
 @media (max-width:1560px){.shift{display:none}}
+@media (max-width:1600px){.crumb span{display:none}.crumb{flex:none}}
 @media (max-width:1240px){.search kbd,.crumb span{display:none}.kpi{min-width:0}.kpi:nth-child(4){display:none}}
 @media (max-width:1100px){.now-card{display:none}.kpi em{display:none}.search{display:none}.work{width:calc(100% - var(--railw) - 24px)}.right{z-index:7}#app:not(.m-live) .ctl{display:none}}
 @media (max-width:1180px){#skylbl{display:none}.bell.sky>button{padding:0 8px}}
@@ -373,6 +374,9 @@ button.row:hover{background:var(--sunken)}
 
   <header class="top panel">
     <div class="crumb"><b>Tideline</b><span id="crumb">Live operations</span></div>
+    <label class="pick"><span>Terminal</span>
+      <select id="term" aria-label="Terminal"><option value="0">Sơn Trà</option><option value="1">Tiên Sa</option></select>
+    </label>
     <label class="search">
       <svg class="i" viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg>
       <input id="q" type="search" placeholder="Container, vessel, crane, truck…" autocomplete="off" spellcheck="false" aria-label="Search">
@@ -387,7 +391,7 @@ button.row:hover{background:var(--sunken)}
     </label>
     <label class="pick"><span>View</span>
       <select id="view" aria-label="Camera view">
-        <option value="all">Whole terminal</option><option value="b1">Berth 1</option><option value="b2">Berth 2</option><option value="yard">Container yard</option><option value="gate">Gate</option><option value="tugs">Tug berth</option><option value="bay">From the bay</option><option value="west">Along the quay, west</option><option value="east">Along the quay, east</option><option value="shore">The shore to Tiên Sa</option>
+        <option value="all">Whole terminal</option><option value="b1">Berth 1</option><option value="b2">Berth 2</option><option value="yard">Container yard</option><option value="gate">Gate</option><option value="tugs">Tug berth</option><option value="bay">From the bay</option><option value="west">Along the quay, west</option><option value="east">Along the quay, east</option><option value="shore">The shore to Tiên Sa</option><option value="tiensa">Tiên Sa, west quay</option><option value="road">Yết Kiêu road at the gate</option><option value="bayeast">Vũng Thùng and the fishing fleet</option><option value="manquang">Mân Quang bridge</option>
       </select>
     </label>
     <div class="bell sky"><button id="skybtn" aria-label="Time of day and weather" aria-haspopup="true"><svg class="i" viewBox="0 0 20 20"><circle cx="7.5" cy="8" r="3"/><path d="M7.5 2.5v1.2M2 8h1.2M3.6 4.1l.9.9M11.4 4.1l-.9.9M8 15.5h7a2.6 2.6 0 000-5.2 3.6 3.6 0 00-6.6 1A2.2 2.2 0 008 15.5z"/></svg><span id="skylbl">Afternoon · Clear</span></button>
